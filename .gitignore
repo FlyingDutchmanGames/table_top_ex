@@ -25,3 +25,6 @@ table_top_ex-*.tar
 
 # Temporary files for e.g. tests
 /tmp
+
+# Ignore build folder
+native/table_top_ex/target
