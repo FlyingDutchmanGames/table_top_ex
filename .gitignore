@@ -28,3 +28,4 @@ table_top_ex-*.tar
 
 # Ignore build folder
 native/table_top_ex/target
+priv/native/libtable_top_ex.so
