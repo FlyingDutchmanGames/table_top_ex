@@ -16,12 +16,17 @@ mod atoms {
     rustler_atoms! {
         atom ok;
         atom error;
+        atom nil;
         atom __true__ = "true";
         atom __false__ = "false";
 
         // Resource Atoms
         atom bad_reference;
         atom lock_fail;
+
+        // tic tac toe
+        atom x;
+        atom o;
     }
 }
 
@@ -30,7 +35,8 @@ rustler::rustler_export_nifs! {
     [
         ("add", 2, add),
         ("tic_tac_toe_new", 0, tic_tac_toe::new),
-        ("tic_tac_toe_available", 1, tic_tac_toe::available)
+        ("tic_tac_toe_available", 1, tic_tac_toe::available),
+        ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn)
     ],
     Some(load)
 }
