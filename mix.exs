@@ -10,7 +10,7 @@ defmodule TableTopEx.MixProject do
       compilers: [:rustler] ++ Mix.compilers(),
       rustler_crates: [
         table_top_ex: [
-          mode: (if Mix.env() == :prod, do: :release, else: :debug)
+          mode: if(Mix.env() == :prod, do: :release, else: :debug)
         ]
       ],
       deps: deps()
