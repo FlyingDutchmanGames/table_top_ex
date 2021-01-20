@@ -16,6 +16,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee2a4ec343196209d6594e19543ae87a39f96d5534d7174822a3ad825dd6ed7e"
 
 [[package]]
+name = "array-macro"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06e97b4e522f9e55523001238ac59d13a8603af57f69980de5d8de4bbbe8ada6"
+
+[[package]]
+name = "atty"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
+dependencies = [
+ "hermit-abi",
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -42,6 +59,44 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "colored"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3616f750b84d8f0de8a58bda93e08e2a81ad3f523089b05f1dffecab48c6cbd"
+dependencies = [
+ "atty",
+ "lazy_static",
+ "winapi",
+]
+
+[[package]]
+name = "either"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
+name = "enum-map"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4187999839f4ae8be35cf185d1381aa8dc32d2f5951349cc37ae49ebc4781855"
+dependencies = [
+ "array-macro",
+ "enum-map-derive",
+]
+
+[[package]]
+name = "enum-map-derive"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5c450cf304c9e18d45db562025a14fb1ca0f5c769b6f609309f81d4c31de455"
+dependencies = [
+ "proc-macro2 1.0.24",
+ "quote 1.0.8",
+ "syn 1.0.58",
+]
+
+[[package]]
 name = "failure"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -66,10 +121,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermit-abi"
+version = "0.1.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "322f4de77956e22ed0e5032c359a0f1273f1f7f0d79bfa3b8ffbc730d7fbcc5c"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "itertools"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "37d572918e350e82412fe766d24b15e6682fb2ed2bbe018280caa810397cb319"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
+name = "lib_table_top"
+version = "0.1.0"
+source = "git+https://github.com/FlyingDutchmanGames/lib_table_top#9cef019ea81fbb4eab06191e27370cc38e458666"
+dependencies = [
+ "colored",
+ "enum-map",
+ "itertools",
+ "thiserror",
+]
 
 [[package]]
 name = "libc"
@@ -99,7 +183,16 @@ version = "0.4.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
 dependencies = [
- "unicode-xid",
+ "unicode-xid 0.1.0",
+]
+
+[[package]]
+name = "proc-macro2"
+version = "1.0.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1e0704ee1a7e00d7bb417d0770ea303c1bccbabf0ef1667dae92b5967f5f8a71"
+dependencies = [
+ "unicode-xid 0.2.1",
 ]
 
 [[package]]
@@ -108,7 +201,16 @@ version = "0.6.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce23b6b870e8f94f81fb0a363d65d86675884b34a09043c81e5562f11c1f8e1"
 dependencies = [
- "proc-macro2",
+ "proc-macro2 0.4.30",
+]
+
+[[package]]
+name = "quote"
+version = "1.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "991431c3519a3f36861882da93630ce66b52918dcf1b8e2fd66b397fc96f28df"
+dependencies = [
+ "proc-macro2 1.0.24",
 ]
 
 [[package]]
@@ -136,9 +238,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a21563a1c4b02773f5c6dce723630c9998694258ff4d67bd6025ba057a29b51c"
 dependencies = [
  "heck",
- "proc-macro2",
- "quote",
- "syn",
+ "proc-macro2 0.4.30",
+ "quote 0.6.13",
+ "syn 0.15.44",
 ]
 
 [[package]]
@@ -156,9 +258,20 @@ version = "0.15.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ca4b3b69a77cbe1ffc9e198781b7acb0c7365a883670e8f1c1bc66fba79a5c5"
 dependencies = [
- "proc-macro2",
- "quote",
- "unicode-xid",
+ "proc-macro2 0.4.30",
+ "quote 0.6.13",
+ "unicode-xid 0.1.0",
+]
+
+[[package]]
+name = "syn"
+version = "1.0.58"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc60a3d73ea6594cd712d830cc1f0390fd71542d8c8cd24e70cc54cdfd5e05d5"
+dependencies = [
+ "proc-macro2 1.0.24",
+ "quote 1.0.8",
+ "unicode-xid 0.2.1",
 ]
 
 [[package]]
@@ -166,7 +279,28 @@ name = "table_top_ex"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "lib_table_top",
  "rustler",
+]
+
+[[package]]
+name = "thiserror"
+version = "1.0.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76cc616c6abf8c8928e2fdcc0dbfab37175edd8fb49a4641066ad1364fdab146"
+dependencies = [
+ "thiserror-impl",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "1.0.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9be73a2caec27583d0046ef3796c3794f868a5bc813db689eed00c7631275cd1"
+dependencies = [
+ "proc-macro2 1.0.24",
+ "quote 1.0.8",
+ "syn 1.0.58",
 ]
 
 [[package]]
@@ -180,6 +314,12 @@ name = "unicode-xid"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc72304796d0818e357ead4e000d19c9c174ab23dc11093ac919054d20a6a7fc"
+
+[[package]]
+name = "unicode-xid"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7fe0bb3479651439c9112f72b6c505038574c9fbb575ed1bf3b797fa39dd564"
 
 [[package]]
 name = "unreachable"
@@ -205,3 +345,25 @@ dependencies = [
  "failure",
  "libc",
 ]
+
+[[package]]
+name = "winapi"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c839a674fcd7a98952e593242ea400abe93992746761e38641405d28b00f419"
+dependencies = [
+ "winapi-i686-pc-windows-gnu",
+ "winapi-x86_64-pc-windows-gnu",
+]
+
+[[package]]
+name = "winapi-i686-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac3b87c63620426dd9b991e5ce0329eff545bccbbb34f3be09ff6fb6ab51b7b6"
+
+[[package]]
+name = "winapi-x86_64-pc-windows-gnu"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"

@@ -12,3 +12,4 @@ crate-type = ["dylib"]
 [dependencies]
 rustler = "0.21.1"
 lazy_static = "1.0"
+lib_table_top = { git = "https://github.com/FlyingDutchmanGames/lib_table_top" }
