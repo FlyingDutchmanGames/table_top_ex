@@ -154,10 +154,7 @@ fn ints_to_position(&(col, row): &(u8, u8)) -> Result<Position, Error> {
 
     match (col, row) {
         (Some(col), Some(row)) => Ok((col, row)),
-        _ => Err(Error::RaiseTerm(Box::new((
-            atoms::error(),
-            atoms::position_outside_of_board(),
-        )))),
+        _ => Err(Error::Atom("position_outside_of_board")),
     }
 }
 

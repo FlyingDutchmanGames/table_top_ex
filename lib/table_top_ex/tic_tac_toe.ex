@@ -4,6 +4,9 @@ defmodule TableTopEx.TicTacToe do
   @enforce_keys [:_ref]
   defstruct [:_ref]
 
+  defguardp on_board?(x) when x in [0, 1, 2]
+  defguardp valid_marker?(marker) when marker in [:x, :o]
+
   @type marker :: :x | :o
   @type position :: {0..2, 0..2}
 
@@ -25,19 +28,32 @@ defmodule TableTopEx.TicTacToe do
     available
   end
 
-  @spec status(%__MODULE__{}) :: nil
+  @spec status(%__MODULE__{}) :: {:win, marker(), [position()]} | :in_progress | :draw
   def status(%__MODULE__{_ref: ref}) do
     NifBridge.tic_tac_toe_status(ref)
   end
 
-  @spec make_move(%__MODULE__{}, marker(), position()) :: :ok | {:error, :space_is_taken}
-  def make_move(%__MODULE__{_ref: ref}, marker, position) do
+  @spec make_move(%__MODULE__{}, marker(), position()) ::
+          :ok | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
+  def make_move(%__MODULE__{_ref: ref}, marker, {x, y} = position)
+      when on_board?(x) and on_board?(y) and valid_marker?(marker) do
     NifBridge.tic_tac_toe_make_move(ref, marker, position)
+    |> case do
+      :position_outside_of_board = err -> {:error, err}
+      result -> result
+    end
   end
 
+  def make_move(_game, marker, _position) when valid_marker?(marker),
+    do: {:error, :position_outside_of_board}
+
+  def make_move(_game, _marker, _position), do: {:error, :invalid_marker}
+
   @spec at_position(%__MODULE__{}, position()) :: marker() | nil
-  def at_position(%__MODULE__{_ref: ref}, position) do
+  def at_position(%__MODULE__{_ref: ref}, {x, y} = position) when on_board?(x) and on_board?(y) do
     {:ok, at} = NifBridge.tic_tac_toe_at_position(ref, position)
     at
   end
+
+  def at_position(_game, _position), do: {:error, :position_outside_of_board}
 end
