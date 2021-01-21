@@ -62,11 +62,11 @@ pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     };
 
     let status = match game.status() {
-        InProgress => (atoms::ok(), atoms::in_progress()).encode(env),
-        Draw => (atoms::ok(), atoms::draw()).encode(env),
+        InProgress => atoms::in_progress().encode(env),
+        Draw => atoms::draw().encode(env),
         Win { marker, spaces } => {
             let spaces: Vec<(u8, u8)> = spaces.map(|pos| position_to_ints(&pos)).into();
-            (atoms::ok(), atoms::win(), marker_to_atom(marker), spaces).encode(env)
+            (atoms::win(), marker_to_atom(marker), spaces).encode(env)
         }
     };
 
@@ -137,7 +137,7 @@ fn marker_to_atom(marker: Marker) -> rustler::Atom {
     }
 }
 
-fn ints_to_position(&(row, col): &(u8, u8)) -> Result<Position, Error> {
+fn ints_to_position(&(col, row): &(u8, u8)) -> Result<Position, Error> {
     let col: Option<Col> = match col {
         0 => Some(Col0),
         1 => Some(Col1),
@@ -162,17 +162,17 @@ fn ints_to_position(&(row, col): &(u8, u8)) -> Result<Position, Error> {
 }
 
 fn position_to_ints(&(col, row): &Position) -> (u8, u8) {
-    let x = match col {
+    let col = match col {
         Col0 => 0,
         Col1 => 1,
         Col2 => 2,
     };
 
-    let y = match row {
+    let row = match row {
         Row0 => 0,
         Row1 => 1,
         Row2 => 2,
     };
 
-    (x, y)
+    (col, row)
 }
