@@ -1,10 +1,10 @@
 use crate::atoms;
 use crate::TicTacToeResource;
 use lib_table_top::games::tic_tac_toe::{
-    Col, Col::*, GameState, Marker, Marker::*, Position, Row, Row::*, Status::*,
+    Col, Col::*, Error::*, GameState, Marker, Marker::*, Position, Row, Row::*, Status::*,
 };
 use rustler::resource::ResourceArc;
-use rustler::{Encoder, Env, NifResult, Term};
+use rustler::{Encoder, Env, Error, NifResult, Term};
 use std::sync::Mutex;
 
 pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -25,10 +25,10 @@ pub fn at_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         Ok(game) => game,
     };
 
-    let position_ints: (u8, u8) = args[1].decode()?;
-
-    let at = ints_to_position(&position_ints)
-        .and_then(|position| game.at_position(position).map(marker_to_atom))
+    let position: Position = ints_to_position(&args[1].decode()?)?;
+    let at = game
+        .at_position(position)
+        .map(marker_to_atom)
         .unwrap_or(atoms::nil());
 
     Ok((atoms::ok(), at).encode(env))
@@ -91,6 +91,45 @@ pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         .encode(env))
 }
 
+pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let resource: ResourceArc<TicTacToeResource> = match args[0].decode() {
+        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
+        Ok(r) => r,
+    };
+
+    let mut game = match resource.0.lock() {
+        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
+        Ok(game) => game,
+    };
+
+    let marker = atom_to_marker(args[1].decode()?)?;
+    let position = ints_to_position(&args[2].decode()?)?;
+
+    game.make_move(marker, position)
+        .and_then(|_| Ok(atoms::ok().encode(env)))
+        .or_else(|err| {
+            let error = match err {
+                SpaceIsTaken => atoms::space_is_taken(),
+                OtherPlayerTurn { .. } => atoms::other_player_turn(),
+            };
+
+            Ok((atoms::error(), error).encode(env))
+        })
+}
+
+fn atom_to_marker(atom: rustler::Atom) -> Result<Marker, Error> {
+    if atom == atoms::x() {
+        Ok(X)
+    } else if atom == atoms::o() {
+        Ok(O)
+    } else {
+        Err(Error::RaiseTerm(Box::new((
+            atoms::error(),
+            "Only atoms :x or :o are allowed",
+        ))))
+    }
+}
+
 fn marker_to_atom(marker: Marker) -> rustler::Atom {
     match marker {
         X => atoms::x(),
@@ -98,7 +137,7 @@ fn marker_to_atom(marker: Marker) -> rustler::Atom {
     }
 }
 
-fn ints_to_position(&(row, col): &(u8, u8)) -> Option<Position> {
+fn ints_to_position(&(row, col): &(u8, u8)) -> Result<Position, Error> {
     let col: Option<Col> = match col {
         0 => Some(Col0),
         1 => Some(Col1),
@@ -114,9 +153,11 @@ fn ints_to_position(&(row, col): &(u8, u8)) -> Option<Position> {
     };
 
     match (col, row) {
-        (None, _) => None,
-        (_, None) => None,
-        (Some(col), Some(row)) => Some((col, row)),
+        (Some(col), Some(row)) => Ok((col, row)),
+        _ => Err(Error::RaiseTerm(Box::new((
+            atoms::error(),
+            "row and cols must be in [0, 1, 2]",
+        )))),
     }
 }
 
