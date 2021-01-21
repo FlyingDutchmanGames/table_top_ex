@@ -12,11 +12,30 @@ defmodule TableTopEx.TicTacToeTest do
              TicTacToe.available(game)
   end
 
-  test "You can make a move" do
-    assert game = TicTacToe.new()
-    assert nil == TicTacToe.at_position(game, {0, 0})
-    assert :ok = TicTacToe.make_move(game, :x, {0, 0})
-    assert :x = TicTacToe.at_position(game, {0, 0})
+  describe "make_move/3" do
+    test "You can make a move" do
+      assert game = TicTacToe.new()
+      assert nil == TicTacToe.at_position(game, {0, 0})
+      assert :ok = TicTacToe.make_move(game, :x, {0, 0})
+      assert :x = TicTacToe.at_position(game, {0, 0})
+    end
+
+    test "You can't go if it's not your turn" do
+      assert game = TicTacToe.new()
+      assert :x = TicTacToe.whose_turn(game)
+      assert {:error, :other_player_turn} = TicTacToe.make_move(game, :o, {0, 0})
+    end
+
+    test "You can't go in a taken space" do
+      assert game = TicTacToe.new()
+      assert :ok = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:error, :space_is_taken} = TicTacToe.make_move(game, :o, {0, 0})
+    end
+
+    test "You can't go outside the board" do
+      assert game = TicTacToe.new()
+      assert {:error, :position_outside_of_board} = TicTacToe.make_move(game, :x, {100, 100})
+    end
   end
 
   for win <- [

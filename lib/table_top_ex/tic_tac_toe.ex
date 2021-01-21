@@ -32,7 +32,7 @@ defmodule TableTopEx.TicTacToe do
 
   @spec make_move(%__MODULE__{}, marker(), position()) :: :ok | {:error, :space_is_taken}
   def make_move(%__MODULE__{_ref: ref}, marker, position) do
-    :ok = NifBridge.tic_tac_toe_make_move(ref, marker, position)
+    NifBridge.tic_tac_toe_make_move(ref, marker, position)
   end
 
   @spec at_position(%__MODULE__{}, position()) :: marker() | nil

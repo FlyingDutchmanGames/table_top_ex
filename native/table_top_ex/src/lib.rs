@@ -36,6 +36,7 @@ mod atoms {
         atom draw;
         atom space_is_taken;
         atom other_player_turn;
+        atom position_outside_of_board;
     }
 }
 

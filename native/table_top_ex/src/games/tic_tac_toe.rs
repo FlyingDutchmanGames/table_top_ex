@@ -156,7 +156,7 @@ fn ints_to_position(&(col, row): &(u8, u8)) -> Result<Position, Error> {
         (Some(col), Some(row)) => Ok((col, row)),
         _ => Err(Error::RaiseTerm(Box::new((
             atoms::error(),
-            "row and cols must be in [0, 1, 2]",
+            atoms::position_outside_of_board(),
         )))),
     }
 }
