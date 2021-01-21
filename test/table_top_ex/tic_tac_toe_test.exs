@@ -11,6 +11,12 @@ defmodule TableTopEx.TicTacToeTest do
 
       assert [{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}] =
                TicTacToe.available(game)
+
+      assert [
+               [nil, nil, nil],
+               [nil, nil, nil],
+               [nil, nil, nil]
+             ] == TicTacToe.board(game)
     end
   end
 
@@ -36,6 +42,12 @@ defmodule TableTopEx.TicTacToeTest do
       assert nil == TicTacToe.at_position(game, {0, 0})
       assert :ok = TicTacToe.make_move(game, :x, {0, 0})
       assert :x = TicTacToe.at_position(game, {0, 0})
+
+      assert [
+               [:x, nil, nil],
+               [nil, nil, nil],
+               [nil, nil, nil]
+             ] == TicTacToe.board(game)
     end
 
     test "you can't go if it's not your turn" do

@@ -43,12 +43,13 @@ mod atoms {
 rustler::rustler_export_nifs! {
     "Elixir.TableTopEx.NifBridge",
     [
-        ("tic_tac_toe_new", 0, tic_tac_toe::new),
-        ("tic_tac_toe_available", 1, tic_tac_toe::available),
-        ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn),
-        ("tic_tac_toe_status", 1, tic_tac_toe::status),
         ("tic_tac_toe_at_position", 2, tic_tac_toe::at_position),
-        ("tic_tac_toe_make_move", 3, tic_tac_toe::make_move)
+        ("tic_tac_toe_available", 1, tic_tac_toe::available),
+        ("tic_tac_toe_board", 1, tic_tac_toe::board),
+        ("tic_tac_toe_make_move", 3, tic_tac_toe::make_move),
+        ("tic_tac_toe_new", 0, tic_tac_toe::new),
+        ("tic_tac_toe_status", 1, tic_tac_toe::status),
+        ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn),
     ],
     Some(load)
 }

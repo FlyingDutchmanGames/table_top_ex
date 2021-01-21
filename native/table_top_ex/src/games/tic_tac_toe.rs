@@ -30,6 +30,25 @@ pub fn at_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), at).encode(env))
 }
 
+pub fn board<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
+
+    let board: Vec<Vec<rustler::Atom>> = game
+        .board()
+        .map(|column| -> Vec<rustler::Atom> {
+            column
+                .map(|marker| marker.map_or(atoms::nil(), marker_to_atom))
+                .into()
+        })
+        .into();
+
+    Ok((atoms::ok(), board).encode(env))
+}
+
 pub fn available<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
     let game = resource

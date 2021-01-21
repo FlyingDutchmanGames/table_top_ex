@@ -22,6 +22,11 @@ defmodule TableTopEx.TicTacToe do
     turn
   end
 
+  def board(%__MODULE__{_ref: ref}) do
+    {:ok, board} = NifBridge.tic_tac_toe_board(ref)
+    board
+  end
+
   @spec available(%__MODULE__{}) :: [position()]
   def available(%__MODULE__{_ref: ref}) do
     {:ok, available} = NifBridge.tic_tac_toe_available(ref)
