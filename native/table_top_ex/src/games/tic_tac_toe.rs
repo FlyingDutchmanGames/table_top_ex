@@ -15,15 +15,11 @@ pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
 }
 
 pub fn at_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = match args[0].decode() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(r) => r,
-    };
-
-    let game = match resource.0.lock() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(game) => game,
-    };
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
 
     let position: Position = ints_to_position(&args[1].decode()?)?;
     let at = game
@@ -35,31 +31,22 @@ pub fn at_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 }
 
 pub fn available<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = match args[0].decode() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(r) => r,
-    };
-
-    let game = match resource.0.lock() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(game) => game,
-    };
-
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
     let available: Vec<(u8, u8)> = game.available().iter().map(position_to_ints).collect();
 
     Ok((atoms::ok(), available).encode(env))
 }
 
 pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = match args[0].decode() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(r) => r,
-    };
-
-    let game = match resource.0.lock() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(game) => game,
-    };
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
 
     let status = match game.status() {
         InProgress => atoms::in_progress().encode(env),
@@ -74,34 +61,22 @@ pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 }
 
 pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = match args[0].decode() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(r) => r,
-    };
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
+    let whose_turn = game.whose_turn().map_or(atoms::nil(), marker_to_atom);
 
-    let game = match resource.0.lock() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(game) => game,
-    };
-
-    Ok((
-        atoms::ok(),
-        game.whose_turn().map_or(atoms::nil(), marker_to_atom),
-    )
-        .encode(env))
+    Ok((atoms::ok(), whose_turn).encode(env))
 }
 
 pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = match args[0].decode() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(r) => r,
-    };
-
-    let mut game = match resource.0.lock() {
-        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
-        Ok(game) => game,
-    };
-
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let mut game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
     let marker = atom_to_marker(args[1].decode()?)?;
     let position = ints_to_position(&args[2].decode()?)?;
 
@@ -123,10 +98,7 @@ fn atom_to_marker(atom: rustler::Atom) -> Result<Marker, Error> {
     } else if atom == atoms::o() {
         Ok(O)
     } else {
-        Err(Error::RaiseTerm(Box::new((
-            atoms::error(),
-            "Only atoms :x or :o are allowed",
-        ))))
+        Err(Error::RaiseAtom("invalid_marker"))
     }
 }
 
