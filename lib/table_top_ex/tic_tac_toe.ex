@@ -16,6 +16,12 @@ defmodule TableTopEx.TicTacToe do
     %__MODULE__{_ref: ref}
   end
 
+  @spec copy(%__MODULE__{}) :: %__MODULE__{}
+  def copy(%__MODULE__{_ref: ref}) do
+    {:ok, new_ref} = NifBridge.tic_tac_toe_copy(ref)
+    %__MODULE__{_ref: new_ref}
+  end
+
   @spec whose_turn(%__MODULE__{}) :: nil | :x | :o
   def whose_turn(%__MODULE__{_ref: ref}) do
     {:ok, turn} = NifBridge.tic_tac_toe_whose_turn(ref)

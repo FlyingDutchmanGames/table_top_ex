@@ -111,6 +111,19 @@ pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         })
 }
 
+pub fn copy<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
+
+    let new_game: GameState = (*game).clone();
+
+    let resource = ResourceArc::new(TicTacToeResource(Mutex::new(new_game)));
+    Ok((atoms::ok(), resource).encode(env))
+}
+
 fn atom_to_marker(atom: rustler::Atom) -> Result<Marker, Error> {
     if atom == atoms::x() {
         Ok(X)

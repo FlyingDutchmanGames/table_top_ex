@@ -22,12 +22,12 @@ defmodule TableTopEx.TicTacToeTest do
 
   describe "at_position" do
     test "is nil for an empty space" do
-      assert game = TicTacToe.new()
+      game = TicTacToe.new()
       assert nil == TicTacToe.at_position(game, {0, 0})
     end
 
     test "returns an error when you give a position outside the board" do
-      assert game = TicTacToe.new()
+      game = TicTacToe.new()
 
       for position <- [{-1, 0}, {4, 0}, {4, 4}] do
         assert {:error, :position_outside_of_board} ==
@@ -36,9 +36,32 @@ defmodule TableTopEx.TicTacToeTest do
     end
   end
 
+  describe "copy/1" do
+    test "games are mutable 😨😱😈😂" do
+      game = TicTacToe.new()
+      game_ref = game
+      assert nil == TicTacToe.at_position(game, {0, 0})
+      assert nil == TicTacToe.at_position(game_ref, {0, 0})
+
+      :ok = TicTacToe.make_move(game, :x, {0, 0})
+
+      assert :x == TicTacToe.at_position(game, {0, 0})
+      assert :x == TicTacToe.at_position(game_ref, {0, 0})
+    end
+
+    test "you can copy a game" do
+      game = TicTacToe.new()
+      assert :ok = TicTacToe.make_move(game, :x, {0, 0})
+      assert %TicTacToe{} = game_copy = TicTacToe.copy(game)
+      assert TicTacToe.board(game) == TicTacToe.board(game_copy)
+      assert :ok = TicTacToe.make_move(game, :o, {1, 1})
+      refute TicTacToe.board(game) == TicTacToe.board(game_copy)
+    end
+  end
+
   describe "make_move/3" do
     test "you can make a move" do
-      assert game = TicTacToe.new()
+      game = TicTacToe.new()
       assert nil == TicTacToe.at_position(game, {0, 0})
       assert :ok = TicTacToe.make_move(game, :x, {0, 0})
       assert :x = TicTacToe.at_position(game, {0, 0})
