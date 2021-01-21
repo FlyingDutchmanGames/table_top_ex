@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![feature(array_map)]
 
 #[macro_use]
 extern crate rustler;
@@ -6,9 +7,9 @@ extern crate rustler;
 mod games;
 use crate::games::tic_tac_toe;
 
-use std::sync::Mutex;
-use rustler::{Encoder, Env, Error, Term};
 use lib_table_top::games::tic_tac_toe::GameState as TicTacToeGameState;
+use rustler::{Encoder, Env, Error, Term};
+use std::sync::Mutex;
 
 pub struct TicTacToeResource(Mutex<TicTacToeGameState>);
 
@@ -24,9 +25,15 @@ mod atoms {
         atom bad_reference;
         atom lock_fail;
 
+        // general
+        atom win;
+        atom lose;
+
         // tic tac toe
         atom x;
         atom o;
+        atom in_progress;
+        atom draw;
     }
 }
 
@@ -36,7 +43,8 @@ rustler::rustler_export_nifs! {
         ("add", 2, add),
         ("tic_tac_toe_new", 0, tic_tac_toe::new),
         ("tic_tac_toe_available", 1, tic_tac_toe::available),
-        ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn)
+        ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn),
+        ("tic_tac_toe_status", 1, tic_tac_toe::status)
     ],
     Some(load)
 }
