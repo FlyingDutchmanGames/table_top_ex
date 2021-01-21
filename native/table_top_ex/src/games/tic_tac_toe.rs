@@ -1,7 +1,7 @@
 use crate::atoms;
 use crate::TicTacToeResource;
 use lib_table_top::games::tic_tac_toe::{
-    Col::*, GameState, Marker, Marker::*, Position, Row::*, Status::*,
+    Col, Col::*, GameState, Marker, Marker::*, Position, Row, Row::*, Status::*,
 };
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, Env, NifResult, Term};
@@ -12,6 +12,26 @@ pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
 
     Ok((atoms::ok(), resource).encode(env))
+}
+
+pub fn at_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let resource: ResourceArc<TicTacToeResource> = match args[0].decode() {
+        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
+        Ok(r) => r,
+    };
+
+    let game = match resource.0.lock() {
+        Err(_) => return Ok((atoms::error(), atoms::bad_reference()).encode(env)),
+        Ok(game) => game,
+    };
+
+    let position_ints: (u8, u8) = args[1].decode()?;
+
+    let at = ints_to_position(&position_ints)
+        .and_then(|position| game.at_position(position).map(marker_to_atom))
+        .unwrap_or(atoms::nil());
+
+    Ok((atoms::ok(), at).encode(env))
 }
 
 pub fn available<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -75,6 +95,28 @@ fn marker_to_atom(marker: Marker) -> rustler::Atom {
     match marker {
         X => atoms::x(),
         O => atoms::o(),
+    }
+}
+
+fn ints_to_position(&(row, col): &(u8, u8)) -> Option<Position> {
+    let col: Option<Col> = match col {
+        0 => Some(Col0),
+        1 => Some(Col1),
+        2 => Some(Col2),
+        _ => None,
+    };
+
+    let row: Option<Row> = match row {
+        0 => Some(Row0),
+        1 => Some(Row1),
+        2 => Some(Row2),
+        _ => None,
+    };
+
+    match (col, row) {
+        (None, _) => None,
+        (_, None) => None,
+        (Some(col), Some(row)) => Some((col, row)),
     }
 }
 
