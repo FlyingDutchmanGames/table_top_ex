@@ -46,8 +46,8 @@ defmodule TableTopEx.TicTacToe do
 
   @spec make_move(%__MODULE__{}, marker(), position()) ::
           :ok | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-  def make_move(%__MODULE__{_ref: ref}, marker, {x, y} = position)
-      when on_board?(x) and on_board?(y) and valid_marker?(marker) do
+  def make_move(%__MODULE__{_ref: ref}, marker, {col, row} = position)
+      when on_board?(col) and on_board?(row) and valid_marker?(marker) do
     NifBridge.tic_tac_toe_make_move(ref, marker, position)
     |> case do
       :position_outside_of_board = err -> {:error, err}
@@ -61,7 +61,8 @@ defmodule TableTopEx.TicTacToe do
   def make_move(_game, _marker, _position), do: {:error, :invalid_marker}
 
   @spec at_position(%__MODULE__{}, position()) :: marker() | nil
-  def at_position(%__MODULE__{_ref: ref}, {x, y} = position) when on_board?(x) and on_board?(y) do
+  def at_position(%__MODULE__{_ref: ref}, {col, row} = position)
+      when on_board?(col) and on_board?(row) do
     {:ok, at} = NifBridge.tic_tac_toe_at_position(ref, position)
     at
   end
