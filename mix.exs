@@ -13,7 +13,18 @@ defmodule TableTopEx.MixProject do
           mode: if(Mix.env() == :prod, do: :release, else: :debug)
         ]
       ],
-      deps: deps()
+      deps: deps(),
+
+      # Docs
+      name: "TableTopEx",
+      source_url: "https://github.com/FlyingDutchmanGames/table_top_ex",
+      homepage_url: "https://github.com/FlyingDutchmanGames/table_top_ex",
+      docs: [
+        # The main page in the docs
+        main: "TableTopEx",
+        # logo: "path/to/logo.png",
+        extras: []
+      ]
     ]
   end
 
@@ -26,7 +37,7 @@ defmodule TableTopEx.MixProject do
   defp deps do
     [
       {:rustler, "~> 0.21.1"},
-      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.23", only: :dev, runtime: false}
     ]
   end
 end

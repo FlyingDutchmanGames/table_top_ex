@@ -52,7 +52,7 @@ defmodule TableTopEx.TicTacToeTest do
     test "you can copy a game" do
       game = TicTacToe.new()
       assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
-      assert %TicTacToe{} = game_copy = TicTacToe.copy(game)
+      assert %TicTacToe{} = game_copy = TicTacToe.Unsafe.copy(game)
       assert TicTacToe.board(game) == TicTacToe.board(game_copy)
       assert :ok = TicTacToe.Unsafe.make_move(game, :o, {1, 1})
       refute TicTacToe.board(game) == TicTacToe.board(game_copy)
