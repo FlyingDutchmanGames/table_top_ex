@@ -25,7 +25,8 @@ defmodule TableTopEx.MixProject do
 
   defp deps do
     [
-      {:rustler, "~> 0.21.1"}
+      {:rustler, "~> 0.21.1"},
+      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
     ]
   end
 end
