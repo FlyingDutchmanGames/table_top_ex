@@ -37,13 +37,13 @@ defmodule TableTopEx.TicTacToeTest do
   end
 
   describe "copy/1" do
-    test "games are mutable 😨😱😈😂" do
+    test "games are mutable 😨😱😈😂 when using unsafe functions" do
       game = TicTacToe.new()
       game_ref = game
       assert nil == TicTacToe.at_position(game, {0, 0})
       assert nil == TicTacToe.at_position(game_ref, {0, 0})
 
-      :ok = TicTacToe.make_move(game, :x, {0, 0})
+      :ok = TicTacToe.Unsafe.make_move(game, :x, {0, 0})
 
       assert :x == TicTacToe.at_position(game, {0, 0})
       assert :x == TicTacToe.at_position(game_ref, {0, 0})
@@ -51,10 +51,10 @@ defmodule TableTopEx.TicTacToeTest do
 
     test "you can copy a game" do
       game = TicTacToe.new()
-      assert :ok = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
       assert %TicTacToe{} = game_copy = TicTacToe.copy(game)
       assert TicTacToe.board(game) == TicTacToe.board(game_copy)
-      assert :ok = TicTacToe.make_move(game, :o, {1, 1})
+      assert :ok = TicTacToe.Unsafe.make_move(game, :o, {1, 1})
       refute TicTacToe.board(game) == TicTacToe.board(game_copy)
     end
   end
@@ -63,7 +63,7 @@ defmodule TableTopEx.TicTacToeTest do
     test "you can make a move" do
       game = TicTacToe.new()
       assert nil == TicTacToe.at_position(game, {0, 0})
-      assert :ok = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
       assert :x = TicTacToe.at_position(game, {0, 0})
 
       assert [
@@ -86,7 +86,7 @@ defmodule TableTopEx.TicTacToeTest do
 
     test "you can't go in a taken space" do
       assert game = TicTacToe.new()
-      assert :ok = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
       assert {:error, :space_is_taken} = TicTacToe.make_move(game, :o, {0, 0})
     end
 
@@ -111,9 +111,11 @@ defmodule TableTopEx.TicTacToeTest do
       {:x, {1, 2}}
     ]
 
-    for {marker, position} <- moves do
-      :ok = TicTacToe.make_move(game, marker, position)
-    end
+    game =
+      Enum.reduce(moves, game, fn {marker, position}, game ->
+        {:ok, game} = TicTacToe.make_move(game, marker, position)
+        game
+      end)
 
     assert :draw == TicTacToe.status(game)
   end
@@ -142,10 +144,12 @@ defmodule TableTopEx.TicTacToeTest do
         |> Enum.take(2)
         |> Enum.map(&{:o, &1})
 
-      [x1, o1, x2, o2, x3]
-      |> Enum.each(fn {marker, position} ->
-        :ok = TicTacToe.make_move(game, marker, position)
-      end)
+      game =
+        [x1, o1, x2, o2, x3]
+        |> Enum.reduce(game, fn {marker, position}, game ->
+          {:ok, game} = TicTacToe.make_move(game, marker, position)
+          game
+        end)
 
       assert {:win, :x, spaces} = TicTacToe.status(game)
       assert spaces == unquote(win)
