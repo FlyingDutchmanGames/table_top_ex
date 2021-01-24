@@ -57,6 +57,12 @@ defmodule TableTopEx.TicTacToeTest do
       assert :ok = TicTacToe.Unsafe.make_move(game, :o, {1, 1})
       refute TicTacToe.board(game) == TicTacToe.board(game_copy)
     end
+
+    test "making a move using the safe abstraction does not modify the original ref" do
+      game = TicTacToe.new()
+      assert {:ok, new_game} = TicTacToe.make_move(game, :x, {0, 0})
+      refute TicTacToe.board(game) == TicTacToe.board(new_game)
+    end
   end
 
   describe "make_move/3" do
