@@ -100,10 +100,10 @@ defmodule TableTopEx.TicTacToe do
     end
   end
 
-  @spec undo(t()) :: {move() | nil, t()}
+  @spec undo(t()) :: {t(), move() | nil}
   def undo(game) do
     new_game = InPlace.copy(game)
     {:ok, previous} = InPlace.undo(new_game)
-    {previous, new_game}
+    {new_game, previous}
   end
 end

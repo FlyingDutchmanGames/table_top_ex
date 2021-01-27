@@ -64,25 +64,59 @@ defmodule TableTopEx.TicTacToeTest do
     end
 
     test "you can't go if it's not your turn" do
-      assert game = TicTacToe.new()
+      game = TicTacToe.new()
       assert :x = TicTacToe.whose_turn(game)
       assert {:error, :other_player_turn} = TicTacToe.make_move(game, :o, {0, 0})
     end
 
     test "you can't use a marker that's not :x or :o" do
-      assert game = TicTacToe.new()
+      game = TicTacToe.new()
       assert {:error, :invalid_marker} = TicTacToe.make_move(game, :random_thingy, {0, 0})
     end
 
     test "you can't go in a taken space" do
-      assert game = TicTacToe.new()
+      game = TicTacToe.new()
       assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
       assert {:error, :space_is_taken} = TicTacToe.make_move(game, :o, {0, 0})
     end
 
     test "you can't go outside the board" do
-      assert game = TicTacToe.new()
+      game = TicTacToe.new()
       assert {:error, :position_outside_of_board} = TicTacToe.make_move(game, :x, {100, 100})
+    end
+  end
+
+  describe "undo/1" do
+    test "you get `nil` undoing an empty board" do
+      game = TicTacToe.new()
+      assert {_game, nil} = TicTacToe.undo(game)
+    end
+
+    test "you can undo a move" do
+      game = TicTacToe.new()
+      {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert [{:x, {0, 0}}] == TicTacToe.history(game)
+      assert {game, {:x, {0, 0}}} = TicTacToe.undo(game)
+      assert [] == TicTacToe.history(game)
+    end
+
+    test "you can undo a move in place" do
+      game = TicTacToe.new()
+      {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert [move] = TicTacToe.history(game)
+      assert {:ok, ^move} = TicTacToe.InPlace.undo(game)
+      assert [] == TicTacToe.history(game)
+    end
+  end
+
+  describe "history/1" do
+    test "you can recover the game history" do
+      game = TicTacToe.new()
+      assert [] == TicTacToe.history(game)
+      {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert [{:x, {0, 0}}] = TicTacToe.history(game)
+      {:ok, game} = TicTacToe.make_move(game, :o, {0, 1})
+      assert [{:x, {0, 0}}, {:o, {0, 1}}] = TicTacToe.history(game)
     end
   end
 
