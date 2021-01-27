@@ -10,24 +10,7 @@ use std::sync::Mutex;
 pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game = GameState::new();
     let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
-
     Ok((atoms::ok(), resource).encode(env))
-}
-
-pub fn at_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-
-    let position: Position = ints_to_position(&args[1].decode()?)?;
-    let at = game
-        .at_position(position)
-        .map(marker_to_atom)
-        .unwrap_or(atoms::nil());
-
-    Ok((atoms::ok(), at).encode(env))
 }
 
 pub fn board<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -39,12 +22,13 @@ pub fn board<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 
     let board: Vec<Vec<rustler::Atom>> = game
         .board()
-        .map(|column| -> Vec<rustler::Atom> {
-            column
-                .map(|marker| marker.map_or(atoms::nil(), marker_to_atom))
-                .into()
+        .iter()
+        .map(|(_col_num, row)| {
+            row.iter()
+                .map(|(_row_num, marker)| marker.map_or(atoms::nil(), marker_to_atom))
+                .collect()
         })
-        .into();
+        .collect();
 
     Ok((atoms::ok(), board).encode(env))
 }
@@ -109,6 +93,39 @@ pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 
             Ok((atoms::error(), error).encode(env))
         })
+}
+
+pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
+
+    let hist: Vec<(rustler::Atom, (u8, u8))> = game
+        .history
+        .iter()
+        .map(|(marker, position)| (marker_to_atom(*marker), position_to_ints(position)))
+        .collect();
+
+    Ok((atoms::ok(), hist).encode(env))
+}
+
+pub fn undo<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let mut game = resource
+        .0
+        .lock()
+        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
+
+    match game.undo() {
+        None => Ok((atoms::ok(), atoms::nil()).encode(env)),
+        Some((marker, position)) => Ok((
+            atoms::ok(),
+            (marker_to_atom(marker), position_to_ints(&position)),
+        )
+            .encode(env)),
+    }
 }
 
 pub fn copy<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {

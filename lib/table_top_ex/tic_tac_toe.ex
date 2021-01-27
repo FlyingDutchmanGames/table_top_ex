@@ -1,16 +1,43 @@
 defmodule TableTopEx.TicTacToe do
-  alias __MODULE__.Unsafe
   alias TableTopEx.NifBridge
 
   @enforce_keys [:_ref]
   defstruct [:_ref]
 
   @opaque t :: %__MODULE__{}
-
-  defguardp on_board?(x) when x in [0, 1, 2]
-
   @type marker :: :x | :o
   @type position :: {0..2, 0..2}
+
+  defmodule InPlace do
+    alias TableTopEx.TicTacToe
+
+    defguard on_board?(x) when x in [0, 1, 2]
+    defguard valid_marker?(marker) when marker in [:x, :o]
+
+    @spec copy(%TicTacToe{}) :: %TicTacToe{}
+    def copy(%TicTacToe{_ref: ref}) do
+      {:ok, new_ref} = NifBridge.tic_tac_toe_copy(ref)
+      %TicTacToe{_ref: new_ref}
+    end
+
+    @spec make_move(%TicTacToe{}, TicTacToe.marker(), TicTacToe.position()) ::
+            :ok | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
+    def make_move(%TicTacToe{_ref: ref}, marker, {col, row} = position)
+        when on_board?(col) and on_board?(row) and valid_marker?(marker) do
+      NifBridge.tic_tac_toe_make_move(ref, marker, position)
+      |> case do
+        :position_outside_of_board = err -> {:error, err}
+        result -> result
+      end
+    end
+
+    def make_move(_game, marker, _position) when valid_marker?(marker),
+      do: {:error, :position_outside_of_board}
+
+    def make_move(_game, _marker, _position), do: {:error, :invalid_marker}
+  end
+
+  defguard on_board?(x) when x in [0, 1, 2]
 
   @spec new() :: t()
   def new() do
@@ -24,7 +51,7 @@ defmodule TableTopEx.TicTacToe do
     turn
   end
 
-  @spec board(t()) :: [[marker]]
+  @spec board(t()) :: [[marker() | nil]]
   def board(%__MODULE__{_ref: ref}) do
     {:ok, board} = NifBridge.tic_tac_toe_board(ref)
     board
@@ -42,21 +69,20 @@ defmodule TableTopEx.TicTacToe do
   end
 
   @spec at_position(t(), position()) :: marker() | nil
-  def at_position(%__MODULE__{_ref: ref}, {col, row} = position)
-      when on_board?(col) and on_board?(row) do
-    {:ok, at} = NifBridge.tic_tac_toe_at_position(ref, position)
-    at
+  def at_position(game, {col_num, row_num}) when on_board?(col_num) and on_board?(row_num) do
+    board(game)
+    |> Enum.at(col_num)
+    |> Enum.at(row_num)
   end
 
   def at_position(_game, _position), do: {:error, :position_outside_of_board}
 
   @spec make_move(t(), marker(), position()) ::
-          {:ok, %__MODULE__{}}
-          | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
+          {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
   def make_move(game, marker, position) do
-    new_game = Unsafe.copy(game)
+    new_game = InPlace.copy(game)
 
-    case Unsafe.make_move(new_game, marker, position) do
+    case InPlace.make_move(new_game, marker, position) do
       :ok -> {:ok, new_game}
       err -> err
     end
