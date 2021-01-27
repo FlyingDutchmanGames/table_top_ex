@@ -3,7 +3,7 @@ defmodule TableTopEx.NifBridge do
 
   def tic_tac_toe_available(_game_state), do: err()
   def tic_tac_toe_board(_game_state), do: err()
-  def tic_tac_toe_copy(_game_state), do: err()
+  def tic_tac_toe_clone(_game_state), do: err()
   def tic_tac_toe_history(_game_state), do: err()
   def tic_tac_toe_make_move(_game_state, _marker, _position), do: err()
   def tic_tac_toe_new(), do: err()

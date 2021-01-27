@@ -15,9 +15,9 @@ defmodule TableTopEx.TicTacToe do
     defguard on_board?(x) when x in [0, 1, 2]
     defguard valid_marker?(marker) when marker in [:x, :o]
 
-    @spec copy(%TicTacToe{}) :: %TicTacToe{}
-    def copy(%TicTacToe{_ref: ref}) do
-      {:ok, new_ref} = NifBridge.tic_tac_toe_copy(ref)
+    @spec clone(%TicTacToe{}) :: %TicTacToe{}
+    def clone(%TicTacToe{_ref: ref}) do
+      {:ok, new_ref} = NifBridge.tic_tac_toe_clone(ref)
       %TicTacToe{_ref: new_ref}
     end
 
@@ -92,7 +92,7 @@ defmodule TableTopEx.TicTacToe do
   @spec make_move(t(), marker(), position()) ::
           {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
   def make_move(game, marker, position) do
-    new_game = InPlace.copy(game)
+    new_game = InPlace.clone(game)
 
     case InPlace.make_move(new_game, marker, position) do
       :ok -> {:ok, new_game}
@@ -102,7 +102,7 @@ defmodule TableTopEx.TicTacToe do
 
   @spec undo(t()) :: {t(), move() | nil}
   def undo(game) do
-    new_game = InPlace.copy(game)
+    new_game = InPlace.clone(game)
     {:ok, previous} = InPlace.undo(new_game)
     {new_game, previous}
   end

@@ -50,7 +50,7 @@ rustler::rustler_export_nifs! {
         ("tic_tac_toe_status", 1, tic_tac_toe::status),
         ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn),
         ("tic_tac_toe_history", 1, tic_tac_toe::history),
-        ("tic_tac_toe_copy", 1, tic_tac_toe::copy),
+        ("tic_tac_toe_clone", 1, tic_tac_toe::clone),
         ("tic_tac_toe_undo", 1, tic_tac_toe::undo)
     ],
     Some(load)

@@ -54,8 +54,8 @@ pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let status = match game.status() {
         InProgress => atoms::in_progress().encode(env),
         Draw => atoms::draw().encode(env),
-        Win { marker, spaces } => {
-            let spaces: Vec<(u8, u8)> = spaces.map(|pos| position_to_ints(&pos)).into();
+        Win { marker, positions } => {
+            let spaces: Vec<(u8, u8)> = positions.map(|pos| position_to_ints(&pos)).into();
             (atoms::win(), marker_to_atom(marker), spaces).encode(env)
         }
     };
@@ -128,7 +128,7 @@ pub fn undo<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     }
 }
 
-pub fn copy<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+pub fn clone<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
     let game = resource
         .0
