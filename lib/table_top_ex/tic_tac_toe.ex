@@ -7,6 +7,7 @@ defmodule TableTopEx.TicTacToe do
   @opaque t :: %__MODULE__{}
   @type marker :: :x | :o
   @type position :: {0..2, 0..2}
+  @type move :: {marker(), position()}
 
   defmodule InPlace do
     alias TableTopEx.TicTacToe
@@ -18,6 +19,11 @@ defmodule TableTopEx.TicTacToe do
     def copy(%TicTacToe{_ref: ref}) do
       {:ok, new_ref} = NifBridge.tic_tac_toe_copy(ref)
       %TicTacToe{_ref: new_ref}
+    end
+
+    @spec undo(%TicTacToe{}) :: {:ok, nil | TicTacToe.move()}
+    def undo(%TicTacToe{_ref: ref}) do
+      NifBridge.tic_tac_toe_undo(ref)
     end
 
     @spec make_move(%TicTacToe{}, TicTacToe.marker(), TicTacToe.position()) ::
@@ -57,6 +63,12 @@ defmodule TableTopEx.TicTacToe do
     board
   end
 
+  @spec history(t()) :: [move()]
+  def history(%__MODULE__{_ref: ref}) do
+    {:ok, history} = NifBridge.tic_tac_toe_history(ref)
+    history
+  end
+
   @spec available(t()) :: [position()]
   def available(%__MODULE__{_ref: ref}) do
     {:ok, available} = NifBridge.tic_tac_toe_available(ref)
@@ -86,5 +98,12 @@ defmodule TableTopEx.TicTacToe do
       :ok -> {:ok, new_game}
       err -> err
     end
+  end
+
+  @spec undo(t()) :: {move() | nil, t()}
+  def undo(game) do
+    new_game = InPlace.copy(game)
+    {:ok, previous} = InPlace.undo(new_game)
+    {previous, new_game}
   end
 end

@@ -21,7 +21,7 @@ defmodule TableTopEx.TicTacToeTest do
   end
 
   describe "copy/1" do
-    test "games are mutable 😨😱😈😂 when using unsafe functions" do
+    test "games are mutable 😨😱😈😂 when using InPlace functions" do
       game = TicTacToe.new()
       game_ref = game
       assert nil == TicTacToe.at_position(game, {0, 0})
@@ -108,6 +108,7 @@ defmodule TableTopEx.TicTacToeTest do
       end)
 
     assert :draw == TicTacToe.status(game)
+    assert moves == TicTacToe.history(game)
   end
 
   for win <- [
