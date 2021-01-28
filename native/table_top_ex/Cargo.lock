@@ -147,7 +147,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lib_table_top"
 version = "0.1.0"
-source = "git+https://github.com/FlyingDutchmanGames/lib_table_top#672450f45c256240230ffca5b6a132c34c598943"
+source = "git+https://github.com/FlyingDutchmanGames/lib_table_top#9db0963192c9e24f2ed2c36b6b0ec2814049f4c0"
 dependencies = [
  "colored",
  "enum-map",
@@ -157,9 +157,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.82"
+version = "0.2.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89203f3fba0a3795506acaad8ebce3c80c0af93f994d5a1d7a0b1eeb23271929"
+checksum = "7eb0c4e9c72ee9d69b767adebc5f4788462a3b45624acd919475c92597bcaf4f"
 
 [[package]]
 name = "miniz_oxide"

@@ -39,7 +39,10 @@ pub fn available<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         .0
         .lock()
         .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-    let available: Vec<(u8, u8)> = game.available().iter().map(position_to_ints).collect();
+    let available: Vec<(u8, u8)> = game
+        .available()
+        .map(|position| position_to_ints(&position))
+        .collect();
 
     Ok((atoms::ok(), available).encode(env))
 }
@@ -103,8 +106,7 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
 
     let hist: Vec<(rustler::Atom, (u8, u8))> = game
-        .history
-        .iter()
+        .history()
         .map(|(marker, position)| (marker_to_atom(*marker), position_to_ints(position)))
         .collect();
 
