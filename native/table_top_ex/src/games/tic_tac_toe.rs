@@ -1,7 +1,7 @@
 use crate::atoms;
 use crate::TicTacToeResource;
 use lib_table_top::games::tic_tac_toe::{
-    Col, Col::*, Error::*, GameState, Marker, Marker::*, Position, Row, Row::*, Status::*,
+    Col, Col::*, Error::*, GameState, Player, Player::*, Position, Row, Row::*, Status::*,
 };
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, Env, Error, NifResult, Term};
@@ -25,7 +25,7 @@ pub fn board<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         .iter()
         .map(|(_col_num, row)| {
             row.iter()
-                .map(|(_row_num, marker)| marker.map_or(atoms::nil(), marker_to_atom))
+                .map(|(_row_num, player)| player.map_or(atoms::nil(), player_to_atom))
                 .collect()
         })
         .collect();
@@ -57,9 +57,9 @@ pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let status = match game.status() {
         InProgress => atoms::in_progress().encode(env),
         Draw => atoms::draw().encode(env),
-        Win { marker, positions } => {
+        Win { player, positions } => {
             let spaces: Vec<(u8, u8)> = positions.map(|pos| position_to_ints(&pos)).into();
-            (atoms::win(), marker_to_atom(marker), spaces).encode(env)
+            (atoms::win(), player_to_atom(player), spaces).encode(env)
         }
     };
 
@@ -72,9 +72,7 @@ pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         .0
         .lock()
         .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-    let whose_turn = game.whose_turn().map_or(atoms::nil(), marker_to_atom);
-
-    Ok((atoms::ok(), whose_turn).encode(env))
+    Ok((atoms::ok(), player_to_atom(game.whose_turn())).encode(env))
 }
 
 pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -83,14 +81,14 @@ pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         .0
         .lock()
         .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-    let marker = atom_to_marker(args[1].decode()?)?;
+    let player = atom_to_player(args[1].decode()?)?;
     let position = ints_to_position(&args[2].decode()?)?;
 
-    game.make_move(marker, position)
+    game.make_move((player, position))
         .and_then(|_| Ok(atoms::ok().encode(env)))
         .or_else(|err| {
             let error = match err {
-                SpaceIsTaken => atoms::space_is_taken(),
+                SpaceIsTaken { .. } => atoms::space_is_taken(),
                 OtherPlayerTurn { .. } => atoms::other_player_turn(),
             };
 
@@ -107,7 +105,7 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 
     let hist: Vec<(rustler::Atom, (u8, u8))> = game
         .history()
-        .map(|(marker, position)| (marker_to_atom(*marker), position_to_ints(position)))
+        .map(|(player, position)| (player_to_atom(player), position_to_ints(&position)))
         .collect();
 
     Ok((atoms::ok(), hist).encode(env))
@@ -122,9 +120,9 @@ pub fn undo<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 
     match game.undo() {
         None => Ok((atoms::ok(), atoms::nil()).encode(env)),
-        Some((marker, position)) => Ok((
+        Some((player, position)) => Ok((
             atoms::ok(),
-            (marker_to_atom(marker), position_to_ints(&position)),
+            (player_to_atom(player), position_to_ints(&position)),
         )
             .encode(env)),
     }
@@ -143,18 +141,18 @@ pub fn clone<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), resource).encode(env))
 }
 
-fn atom_to_marker(atom: rustler::Atom) -> Result<Marker, Error> {
+fn atom_to_player(atom: rustler::Atom) -> Result<Player, Error> {
     if atom == atoms::x() {
         Ok(X)
     } else if atom == atoms::o() {
         Ok(O)
     } else {
-        Err(Error::RaiseAtom("invalid_marker"))
+        Err(Error::RaiseAtom("invalid_player"))
     }
 }
 
-fn marker_to_atom(marker: Marker) -> rustler::Atom {
-    match marker {
+fn player_to_atom(player: Player) -> rustler::Atom {
+    match player {
         X => atoms::x(),
         O => atoms::o(),
     }
