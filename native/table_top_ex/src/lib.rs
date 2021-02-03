@@ -4,6 +4,7 @@
 #[macro_use]
 extern crate rustler;
 
+mod common;
 mod games;
 use crate::games::tic_tac_toe;
 
