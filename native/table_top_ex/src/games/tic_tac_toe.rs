@@ -114,6 +114,41 @@ pub fn to_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     })
 }
 
+pub fn from_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let encoded: &str = args[1].decode()?;
+    match serde_json::from_str::<GameState>(&encoded) {
+        Ok(game) => {
+            let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
+            Ok((atoms::ok(), resource).encode(env))
+        },
+        Err(err) => {
+            Ok((atoms::error(), err.to_string()).encode(env))
+        }
+    }
+}
+
+pub fn to_bincode<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    with_game_state(env, args, |game| {
+        match bincode::serialize(game) {
+            Ok(json) => Box::new((atoms::ok(), json)),
+            Err(_) => Box::new(atoms::error()),
+        }
+    })
+}
+
+pub fn from_bincode<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let encoded: Vec<u8> = args[1].decode()?;
+    match bincode::deserialize::<GameState>(&encoded) {
+        Ok(game) => {
+            let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
+            Ok((atoms::ok(), resource).encode(env))
+        },
+        Err(err) => {
+            Ok((atoms::error(), err.to_string()).encode(env))
+        }
+    }
+}
+
 fn with_game_state<'a, F: FnOnce(&mut GameState) -> Box<dyn Encoder>>(
     env: Env<'a>,
     args: &[Term<'a>],

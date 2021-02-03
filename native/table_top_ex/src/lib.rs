@@ -51,7 +51,11 @@ rustler::rustler_export_nifs! {
         ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn),
         ("tic_tac_toe_history", 1, tic_tac_toe::history),
         ("tic_tac_toe_clone", 1, tic_tac_toe::clone),
-        ("tic_tac_toe_undo", 1, tic_tac_toe::undo)
+        ("tic_tac_toe_undo", 1, tic_tac_toe::undo),
+        ("tic_tac_toe_to_json", 1, tic_tac_toe::to_json),
+        ("tic_tac_toe_from_json", 1, tic_tac_toe::from_json),
+        ("tic_tac_toe_to_bincode", 1, tic_tac_toe::to_bincode),
+        ("tic_tac_toe_from_bincode", 1, tic_tac_toe::from_bincode),
     ],
     Some(load)
 }
