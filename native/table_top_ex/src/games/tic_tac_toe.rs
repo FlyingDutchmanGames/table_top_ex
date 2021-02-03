@@ -14,131 +14,118 @@ pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
 }
 
 pub fn board<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
+    with_game_state(env, args, |game| {
+        let board: Vec<Vec<rustler::Atom>> = game
+            .board()
+            .iter()
+            .map(|(_col_num, row)| {
+                row.iter()
+                    .map(|(_row_num, player)| player.map_or(atoms::nil(), player_to_atom))
+                    .collect()
+            })
+            .collect();
 
-    let board: Vec<Vec<rustler::Atom>> = game
-        .board()
-        .iter()
-        .map(|(_col_num, row)| {
-            row.iter()
-                .map(|(_row_num, player)| player.map_or(atoms::nil(), player_to_atom))
-                .collect()
-        })
-        .collect();
-
-    Ok((atoms::ok(), board).encode(env))
+        Box::new((atoms::ok(), board))
+    })
 }
 
 pub fn available<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-    let available: Vec<(u8, u8)> = game
-        .available()
-        .map(|position| position_to_ints(&position))
-        .collect();
+    with_game_state(env, args, |game| {
+        let available: Vec<(u8, u8)> = game
+            .available()
+            .map(|position| position_to_ints(&position))
+            .collect();
 
-    Ok((atoms::ok(), available).encode(env))
+        Box::new((atoms::ok(), available))
+    })
 }
 
 pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-
-    let status = match game.status() {
-        InProgress => atoms::in_progress().encode(env),
-        Draw => atoms::draw().encode(env),
+    with_game_state(env, args, |game| match game.status() {
+        InProgress => Box::new(atoms::in_progress()),
+        Draw => Box::new(atoms::draw()),
         Win { player, positions } => {
             let spaces: Vec<(u8, u8)> = positions.map(|pos| position_to_ints(&pos)).into();
-            (atoms::win(), player_to_atom(player), spaces).encode(env)
+            Box::new((atoms::win(), player_to_atom(player), spaces))
         }
-    };
-
-    Ok(status)
+    })
 }
 
 pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-    Ok((atoms::ok(), player_to_atom(game.whose_turn())).encode(env))
+    with_game_state(env, args, |game| {
+        Box::new((atoms::ok(), player_to_atom(game.whose_turn())))
+    })
 }
 
 pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let mut game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
     let player = atom_to_player(args[1].decode()?)?;
     let position = ints_to_position(&args[2].decode()?)?;
 
-    game.make_move((player, position))
-        .and_then(|_| Ok(atoms::ok().encode(env)))
-        .or_else(|err| {
+    with_game_state(env, args, |game| match game.make_move((player, position)) {
+        Ok(_) => Box::new(atoms::ok()),
+        Err(err) => {
             let error = match err {
                 SpaceIsTaken { .. } => atoms::space_is_taken(),
                 OtherPlayerTurn { .. } => atoms::other_player_turn(),
             };
 
-            Ok((atoms::error(), error).encode(env))
-        })
+            Box::new((atoms::error(), error))
+        }
+    })
 }
 
 pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
+    with_game_state(env, args, |game| {
+        let hist: Vec<(rustler::Atom, (u8, u8))> = game
+            .history()
+            .map(|(player, position)| (player_to_atom(player), position_to_ints(&position)))
+            .collect();
 
-    let hist: Vec<(rustler::Atom, (u8, u8))> = game
-        .history()
-        .map(|(player, position)| (player_to_atom(player), position_to_ints(&position)))
-        .collect();
-
-    Ok((atoms::ok(), hist).encode(env))
+        Box::new((atoms::ok(), hist))
+    })
 }
 
 pub fn undo<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    with_game_state(env, args, |game| match game.undo() {
+        None => Box::new((atoms::ok(), atoms::nil())),
+        Some((player, position)) => Box::new((
+            atoms::ok(),
+            (player_to_atom(player), position_to_ints(&position)),
+        )),
+    })
+}
+
+pub fn clone<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    with_game_state(env, args, |game| {
+        let new_game: GameState = game.clone();
+        let resource = ResourceArc::new(TicTacToeResource(Mutex::new(new_game)));
+        Box::new((atoms::ok(), resource))
+    })
+}
+
+pub fn to_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    with_game_state(env, args, |game| {
+        let result = match serde_json::to_string(game) {
+            Ok(json) => (atoms::ok(), json),
+            Err(err) => (atoms::error(), err.to_string()),
+        };
+
+        Box::new(result)
+    })
+}
+
+fn with_game_state<'a, F: FnOnce(&mut GameState) -> Box<dyn Encoder>>(
+    env: Env<'a>,
+    args: &[Term<'a>],
+    f: F,
+) -> NifResult<Term<'a>> {
     let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
     let mut game = resource
         .0
         .lock()
         .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
 
-    match game.undo() {
-        None => Ok((atoms::ok(), atoms::nil()).encode(env)),
-        Some((player, position)) => Ok((
-            atoms::ok(),
-            (player_to_atom(player), position_to_ints(&position)),
-        )
-            .encode(env)),
-    }
-}
-
-pub fn clone<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-
-    let new_game: GameState = (*game).clone();
-
-    let resource = ResourceArc::new(TicTacToeResource(Mutex::new(new_game)));
-    Ok((atoms::ok(), resource).encode(env))
+    Ok(f(&mut (*game)).encode(env))
 }
 
 fn atom_to_player(atom: rustler::Atom) -> Result<Player, Error> {
