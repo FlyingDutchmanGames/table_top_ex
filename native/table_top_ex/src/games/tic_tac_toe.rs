@@ -1,10 +1,9 @@
-use crate::atoms;
-use crate::TicTacToeResource;
+use crate::{atoms, common::Bin, TicTacToeResource};
 use lib_table_top::games::tic_tac_toe::{
     Col, Col::*, Error::*, GameState, Player, Player::*, Position, Row, Row::*, Status::*,
 };
 use rustler::resource::ResourceArc;
-use rustler::{Encoder, Env, Error, NifResult, Term};
+use rustler::{Encoder, Env, Error, NifResult, Term, Binary};
 use std::sync::Mutex;
 
 pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -112,6 +111,35 @@ pub fn to_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 
         Box::new(result)
     })
+}
+
+pub fn from_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let encoded: &str = args[0].decode()?;
+    match serde_json::from_str::<GameState>(&encoded) {
+        Ok(game) => {
+            let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
+            Ok((atoms::ok(), resource).encode(env))
+        }
+        Err(err) => Ok((atoms::error(), err.to_string()).encode(env)),
+    }
+}
+
+pub fn to_bincode<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    with_game_state(env, args, |game| match bincode::serialize(game) {
+        Ok(bincode) => Box::new((atoms::ok(), Bin(bincode))),
+        Err(_) => Box::new(atoms::error()),
+    })
+}
+
+pub fn from_bincode<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let encoded: Binary<'_> = args[0].decode()?;
+    match bincode::deserialize::<GameState>(&encoded) {
+        Ok(game) => {
+            let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
+            Ok((atoms::ok(), resource).encode(env))
+        }
+        Err(err) => Ok((atoms::error(), err.to_string()).encode(env)),
+    }
 }
 
 fn with_game_state<'a, F: FnOnce(&mut GameState) -> Box<dyn Encoder>>(

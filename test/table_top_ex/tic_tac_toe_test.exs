@@ -180,4 +180,61 @@ defmodule TableTopEx.TicTacToeTest do
       assert spaces == unquote(win)
     end
   end
+
+  describe "json" do
+    test "You can {de}serialize an empty game" do
+      game = TicTacToe.new()
+      assert {:ok, "{\"history\":[]}" = json} = TicTacToe.to_json(game)
+      {:ok, new_game} = TicTacToe.from_json(json)
+      assert [] == TicTacToe.history(new_game)
+    end
+
+    test "You can serialize a game with moves" do
+      game = TicTacToe.new()
+      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.make_move(game, :o, {1, 1})
+      assert {:ok, game} = TicTacToe.make_move(game, :x, {2, 2})
+      assert {:ok, "{\"history\":[[0,0],[1,1],[2,2]]}" = json} = TicTacToe.to_json(game)
+      {:ok, new_game} = TicTacToe.from_json(json)
+      assert [x: {0, 0}, o: {1, 1}, x: {2, 2}] == TicTacToe.history(new_game)
+    end
+
+    test "invalid json yields an error" do
+      assert {:error, "expected value at line 1 column 1"} = TicTacToe.from_json("invalid-json")
+      assert {:error, "missing field `history` at line 1 column 2"} = TicTacToe.from_json("{}")
+
+      assert {:error, "invalid type: integer `1`, expected a sequence at line 1 column 13"} =
+               TicTacToe.from_json("{\"history\": 1}")
+    end
+  end
+
+  describe "bincode" do
+    test "You can {de}serialize an empty game" do
+      game = TicTacToe.new()
+      assert {:ok, <<0, 0, 0, 0, 0, 0, 0, 0>> = bincode} = TicTacToe.to_bincode(game)
+      {:ok, new_game} = TicTacToe.from_bincode(bincode)
+      assert [] == TicTacToe.history(new_game)
+    end
+
+    test "You can serialize a game with moves" do
+      game = TicTacToe.new()
+      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.make_move(game, :o, {1, 1})
+      assert {:ok, game} = TicTacToe.make_move(game, :x, {2, 2})
+
+      assert {:ok, <<3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2>> = bincode} =
+               TicTacToe.to_bincode(game)
+
+      {:ok, new_game} = TicTacToe.from_bincode(bincode)
+      assert [x: {0, 0}, o: {1, 1}, x: {2, 2}] == TicTacToe.history(new_game)
+    end
+
+    test "invalid bincode yields an error" do
+      assert {:error, "invalid value: 98, expected one of: 0, 1, 2"} =
+               TicTacToe.from_bincode("invalid-bincode")
+
+      assert {:error, "io error: unexpected end of file"} =
+               TicTacToe.from_bincode(<<0, 1, 2, 3, 4>>)
+    end
+  end
 end
