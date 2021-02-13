@@ -21,26 +21,21 @@ defmodule TableTopEx.TicTacToe do
       %TicTacToe{_ref: new_ref}
     end
 
-    @spec undo(%TicTacToe{}) :: {:ok, nil | TicTacToe.move()}
-    def undo(%TicTacToe{_ref: ref}) do
-      NifBridge.tic_tac_toe_undo(ref)
-    end
-
-    @spec make_move(%TicTacToe{}, TicTacToe.marker(), TicTacToe.position()) ::
+    @spec apply_action(%TicTacToe{}, TicTacToe.marker(), TicTacToe.position()) ::
             :ok | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-    def make_move(%TicTacToe{_ref: ref}, marker, {col, row} = position)
+    def apply_action(%TicTacToe{_ref: ref}, marker, {col, row} = position)
         when on_board?(col) and on_board?(row) and valid_marker?(marker) do
-      NifBridge.tic_tac_toe_make_move(ref, marker, position)
+      NifBridge.tic_tac_toe_apply_action(ref, marker, position)
       |> case do
         :position_outside_of_board = err -> {:error, err}
         result -> result
       end
     end
 
-    def make_move(_game, marker, _position) when valid_marker?(marker),
+    def apply_action(_game, marker, _position) when valid_marker?(marker),
       do: {:error, :position_outside_of_board}
 
-    def make_move(_game, _marker, _position), do: {:error, :invalid_marker}
+    def apply_action(_game, _marker, _position), do: {:error, :invalid_marker}
   end
 
   defguard on_board?(x) when x in [0, 1, 2]
@@ -89,22 +84,15 @@ defmodule TableTopEx.TicTacToe do
 
   def at_position(_game, _position), do: {:error, :position_outside_of_board}
 
-  @spec make_move(t(), marker(), position()) ::
+  @spec apply_action(t(), marker(), position()) ::
           {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-  def make_move(game, marker, position) do
+  def apply_action(game, marker, position) do
     new_game = InPlace.clone(game)
 
-    case InPlace.make_move(new_game, marker, position) do
+    case InPlace.apply_action(new_game, marker, position) do
       :ok -> {:ok, new_game}
       err -> err
     end
-  end
-
-  @spec undo(t()) :: {t(), move() | nil}
-  def undo(game) do
-    new_game = InPlace.clone(game)
-    {:ok, previous} = InPlace.undo(new_game)
-    {new_game, previous}
   end
 
   @spec to_json(t()) :: {:ok, String.t()} | {:error, String.t()}

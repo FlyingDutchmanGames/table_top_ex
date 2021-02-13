@@ -56,11 +56,11 @@ pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     })
 }
 
-pub fn make_move<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let player = atom_to_player(args[1].decode()?)?;
     let position = ints_to_position(&args[2].decode()?)?;
 
-    with_game_state(env, args, |game| match game.make_move((player, position)) {
+    with_game_state(env, args, |game| match game.apply_action((player, position)) {
         Ok(_) => Box::new(atoms::ok()),
         Err(err) => {
             let error = match err {
@@ -81,16 +81,6 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
             .collect();
 
         Box::new((atoms::ok(), hist))
-    })
-}
-
-pub fn undo<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| match game.undo() {
-        None => Box::new((atoms::ok(), atoms::nil())),
-        Some((player, position)) => Box::new((
-            atoms::ok(),
-            (player_to_atom(player), position_to_ints(&position)),
-        )),
     })
 }
 

@@ -27,7 +27,7 @@ defmodule TableTopEx.TicTacToeTest do
       assert nil == TicTacToe.at_position(game, {0, 0})
       assert nil == TicTacToe.at_position(game_ref, {0, 0})
 
-      :ok = TicTacToe.InPlace.make_move(game, :x, {0, 0})
+      :ok = TicTacToe.InPlace.apply_action(game, :x, {0, 0})
 
       assert :x == TicTacToe.at_position(game, {0, 0})
       assert :x == TicTacToe.at_position(game_ref, {0, 0})
@@ -35,25 +35,25 @@ defmodule TableTopEx.TicTacToeTest do
 
     test "you can clone a game" do
       game = TicTacToe.new()
-      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.apply_action(game, :x, {0, 0})
       assert %TicTacToe{} = game_clone = TicTacToe.InPlace.clone(game)
       assert TicTacToe.board(game) == TicTacToe.board(game_clone)
-      assert :ok = TicTacToe.InPlace.make_move(game, :o, {1, 1})
+      assert :ok = TicTacToe.InPlace.apply_action(game, :o, {1, 1})
       refute TicTacToe.board(game) == TicTacToe.board(game_clone)
     end
 
     test "making a move using the safe abstraction does not modify the original ref" do
       game = TicTacToe.new()
-      assert {:ok, new_game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, new_game} = TicTacToe.apply_action(game, :x, {0, 0})
       refute TicTacToe.board(game) == TicTacToe.board(new_game)
     end
   end
 
-  describe "make_move/3" do
+  describe "apply_action/3" do
     test "you can make a move" do
       game = TicTacToe.new()
       assert nil == TicTacToe.at_position(game, {0, 0})
-      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.apply_action(game, :x, {0, 0})
       assert :x = TicTacToe.at_position(game, {0, 0})
 
       assert [
@@ -66,46 +66,23 @@ defmodule TableTopEx.TicTacToeTest do
     test "you can't go if it's not your turn" do
       game = TicTacToe.new()
       assert :x = TicTacToe.whose_turn(game)
-      assert {:error, :other_player_turn} = TicTacToe.make_move(game, :o, {0, 0})
+      assert {:error, :other_player_turn} = TicTacToe.apply_action(game, :o, {0, 0})
     end
 
     test "you can't use a marker that's not :x or :o" do
       game = TicTacToe.new()
-      assert {:error, :invalid_marker} = TicTacToe.make_move(game, :random_thingy, {0, 0})
+      assert {:error, :invalid_marker} = TicTacToe.apply_action(game, :random_thingy, {0, 0})
     end
 
     test "you can't go in a taken space" do
       game = TicTacToe.new()
-      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
-      assert {:error, :space_is_taken} = TicTacToe.make_move(game, :o, {0, 0})
+      assert {:ok, game} = TicTacToe.apply_action(game, :x, {0, 0})
+      assert {:error, :space_is_taken} = TicTacToe.apply_action(game, :o, {0, 0})
     end
 
     test "you can't go outside the board" do
       game = TicTacToe.new()
-      assert {:error, :position_outside_of_board} = TicTacToe.make_move(game, :x, {100, 100})
-    end
-  end
-
-  describe "undo/1" do
-    test "you get `nil` undoing an empty board" do
-      game = TicTacToe.new()
-      assert {_game, nil} = TicTacToe.undo(game)
-    end
-
-    test "you can undo a move" do
-      game = TicTacToe.new()
-      {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
-      assert [{:x, {0, 0}}] == TicTacToe.history(game)
-      assert {game, {:x, {0, 0}}} = TicTacToe.undo(game)
-      assert [] == TicTacToe.history(game)
-    end
-
-    test "you can undo a move in place" do
-      game = TicTacToe.new()
-      {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
-      assert [move] = TicTacToe.history(game)
-      assert {:ok, ^move} = TicTacToe.InPlace.undo(game)
-      assert [] == TicTacToe.history(game)
+      assert {:error, :position_outside_of_board} = TicTacToe.apply_action(game, :x, {100, 100})
     end
   end
 
@@ -113,9 +90,9 @@ defmodule TableTopEx.TicTacToeTest do
     test "you can recover the game history" do
       game = TicTacToe.new()
       assert [] == TicTacToe.history(game)
-      {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
+      {:ok, game} = TicTacToe.apply_action(game, :x, {0, 0})
       assert [{:x, {0, 0}}] = TicTacToe.history(game)
-      {:ok, game} = TicTacToe.make_move(game, :o, {0, 1})
+      {:ok, game} = TicTacToe.apply_action(game, :o, {0, 1})
       assert [{:x, {0, 0}}, {:o, {0, 1}}] = TicTacToe.history(game)
     end
   end
@@ -137,7 +114,7 @@ defmodule TableTopEx.TicTacToeTest do
 
     game =
       Enum.reduce(moves, game, fn {marker, position}, game ->
-        {:ok, game} = TicTacToe.make_move(game, marker, position)
+        {:ok, game} = TicTacToe.apply_action(game, marker, position)
         game
       end)
 
@@ -172,7 +149,7 @@ defmodule TableTopEx.TicTacToeTest do
       game =
         [x1, o1, x2, o2, x3]
         |> Enum.reduce(game, fn {marker, position}, game ->
-          {:ok, game} = TicTacToe.make_move(game, marker, position)
+          {:ok, game} = TicTacToe.apply_action(game, marker, position)
           game
         end)
 
@@ -191,9 +168,9 @@ defmodule TableTopEx.TicTacToeTest do
 
     test "You can serialize a game with moves" do
       game = TicTacToe.new()
-      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
-      assert {:ok, game} = TicTacToe.make_move(game, :o, {1, 1})
-      assert {:ok, game} = TicTacToe.make_move(game, :x, {2, 2})
+      assert {:ok, game} = TicTacToe.apply_action(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.apply_action(game, :o, {1, 1})
+      assert {:ok, game} = TicTacToe.apply_action(game, :x, {2, 2})
       assert {:ok, "{\"history\":[[0,0],[1,1],[2,2]]}" = json} = TicTacToe.to_json(game)
       {:ok, new_game} = TicTacToe.from_json(json)
       assert [x: {0, 0}, o: {1, 1}, x: {2, 2}] == TicTacToe.history(new_game)
@@ -218,9 +195,9 @@ defmodule TableTopEx.TicTacToeTest do
 
     test "You can serialize a game with moves" do
       game = TicTacToe.new()
-      assert {:ok, game} = TicTacToe.make_move(game, :x, {0, 0})
-      assert {:ok, game} = TicTacToe.make_move(game, :o, {1, 1})
-      assert {:ok, game} = TicTacToe.make_move(game, :x, {2, 2})
+      assert {:ok, game} = TicTacToe.apply_action(game, :x, {0, 0})
+      assert {:ok, game} = TicTacToe.apply_action(game, :o, {1, 1})
+      assert {:ok, game} = TicTacToe.apply_action(game, :x, {2, 2})
 
       assert {:ok, <<3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2>> = bincode} =
                TicTacToe.to_bincode(game)
