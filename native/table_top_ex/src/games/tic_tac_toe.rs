@@ -4,11 +4,9 @@ use lib_table_top::games::tic_tac_toe::{
 };
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, Env, Error, NifResult, Term, Binary};
-use std::sync::Mutex;
 
 pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let game = GameState::new();
-    let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
+    let resource = ResourceArc::new(TicTacToeResource(GameState::new()));
     Ok((atoms::ok(), resource).encode(env))
 }
 
@@ -84,14 +82,6 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     })
 }
 
-pub fn clone<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| {
-        let new_game: GameState = game.clone();
-        let resource = ResourceArc::new(TicTacToeResource(Mutex::new(new_game)));
-        Box::new((atoms::ok(), resource))
-    })
-}
-
 pub fn to_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     with_game_state(env, args, |game| {
         let result = match serde_json::to_string(game) {
@@ -107,7 +97,7 @@ pub fn from_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let encoded: &str = args[0].decode()?;
     match serde_json::from_str::<GameState>(&encoded) {
         Ok(game) => {
-            let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
+            let resource = ResourceArc::new(TicTacToeResource(game));
             Ok((atoms::ok(), resource).encode(env))
         }
         Err(err) => Ok((atoms::error(), err.to_string()).encode(env)),
@@ -125,25 +115,20 @@ pub fn from_bincode<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> 
     let encoded: Binary<'_> = args[0].decode()?;
     match bincode::deserialize::<GameState>(&encoded) {
         Ok(game) => {
-            let resource = ResourceArc::new(TicTacToeResource(Mutex::new(game)));
+            let resource = ResourceArc::new(TicTacToeResource(game));
             Ok((atoms::ok(), resource).encode(env))
         }
         Err(err) => Ok((atoms::error(), err.to_string()).encode(env)),
     }
 }
 
-fn with_game_state<'a, F: FnOnce(&mut GameState) -> Box<dyn Encoder>>(
+fn with_game_state<'a, F: FnOnce(&GameState) -> Box<dyn Encoder>>(
     env: Env<'a>,
     args: &[Term<'a>],
     f: F,
 ) -> NifResult<Term<'a>> {
-    let resource: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    let mut game = resource
-        .0
-        .lock()
-        .map_err(|_| Error::RaiseAtom("failure_unlocking_mutex"))?;
-
-    Ok(f(&mut (*game)).encode(env))
+    let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    Ok(f(&(game.0)).encode(env))
 }
 
 fn atom_to_player(atom: rustler::Atom) -> Result<Player, Error> {

@@ -20,35 +20,6 @@ defmodule TableTopEx.TicTacToeTest do
     end
   end
 
-  describe "clone/1" do
-    test "games are mutable 😨😱😈😂 when using InPlace functions" do
-      game = TicTacToe.new()
-      game_ref = game
-      assert nil == TicTacToe.at_position(game, {0, 0})
-      assert nil == TicTacToe.at_position(game_ref, {0, 0})
-
-      :ok = TicTacToe.InPlace.apply_action(game, :x, {0, 0})
-
-      assert :x == TicTacToe.at_position(game, {0, 0})
-      assert :x == TicTacToe.at_position(game_ref, {0, 0})
-    end
-
-    test "you can clone a game" do
-      game = TicTacToe.new()
-      assert {:ok, game} = TicTacToe.apply_action(game, :x, {0, 0})
-      assert %TicTacToe{} = game_clone = TicTacToe.InPlace.clone(game)
-      assert TicTacToe.board(game) == TicTacToe.board(game_clone)
-      assert :ok = TicTacToe.InPlace.apply_action(game, :o, {1, 1})
-      refute TicTacToe.board(game) == TicTacToe.board(game_clone)
-    end
-
-    test "making a move using the safe abstraction does not modify the original ref" do
-      game = TicTacToe.new()
-      assert {:ok, new_game} = TicTacToe.apply_action(game, :x, {0, 0})
-      refute TicTacToe.board(game) == TicTacToe.board(new_game)
-    end
-  end
-
   describe "apply_action/3" do
     test "you can make a move" do
       game = TicTacToe.new()
