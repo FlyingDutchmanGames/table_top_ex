@@ -9,35 +9,6 @@ defmodule TableTopEx.TicTacToe do
   @type position :: {0..2, 0..2}
   @type move :: {marker(), position()}
 
-  defmodule InPlace do
-    alias TableTopEx.TicTacToe
-
-    defguard on_board?(x) when x in [0, 1, 2]
-    defguard valid_marker?(marker) when marker in [:x, :o]
-
-    @spec clone(%TicTacToe{}) :: %TicTacToe{}
-    def clone(%TicTacToe{_ref: ref}) do
-      {:ok, new_ref} = NifBridge.tic_tac_toe_clone(ref)
-      %TicTacToe{_ref: new_ref}
-    end
-
-    @spec apply_action(%TicTacToe{}, TicTacToe.marker(), TicTacToe.position()) ::
-            :ok | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-    def apply_action(%TicTacToe{_ref: ref}, marker, {col, row} = position)
-        when on_board?(col) and on_board?(row) and valid_marker?(marker) do
-      NifBridge.tic_tac_toe_apply_action(ref, marker, position)
-      |> case do
-        :position_outside_of_board = err -> {:error, err}
-        result -> result
-      end
-    end
-
-    def apply_action(_game, marker, _position) when valid_marker?(marker),
-      do: {:error, :position_outside_of_board}
-
-    def apply_action(_game, _marker, _position), do: {:error, :invalid_marker}
-  end
-
   defguard on_board?(x) when x in [0, 1, 2]
 
   @spec new() :: t()
@@ -86,11 +57,9 @@ defmodule TableTopEx.TicTacToe do
 
   @spec apply_action(t(), marker(), position()) ::
           {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-  def apply_action(game, marker, position) do
-    new_game = InPlace.clone(game)
-
-    case InPlace.apply_action(new_game, marker, position) do
-      :ok -> {:ok, new_game}
+  def apply_action(%__MODULE__{_ref: ref}, marker, position) do
+    case NifBridge.tic_tac_toe_apply_action(ref, marker, position) do
+      {:ok, new_ref} -> {:ok, %__MODULE__{_ref: new_ref}}
       err -> err
     end
   end
@@ -103,19 +72,6 @@ defmodule TableTopEx.TicTacToe do
   @spec from_json(String.t()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
   def from_json(json) when is_binary(json) do
     case NifBridge.tic_tac_toe_from_json(json) do
-      {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
-      {:error, err} -> {:error, err}
-    end
-  end
-
-  @spec to_bincode(t()) :: {:ok, String.t()} | {:error, String.t()}
-  def to_bincode(%__MODULE__{_ref: ref}) do
-    NifBridge.tic_tac_toe_to_bincode(ref)
-  end
-
-  @spec from_bincode(String.t()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
-  def from_bincode(json) when is_binary(json) do
-    case NifBridge.tic_tac_toe_from_bincode(json) do
       {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
       {:error, err} -> {:error, err}
     end

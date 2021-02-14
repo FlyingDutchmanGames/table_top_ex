@@ -52,8 +52,6 @@ rustler::rustler_export_nifs! {
         ("tic_tac_toe_history", 1, tic_tac_toe::history),
         ("tic_tac_toe_to_json", 1, tic_tac_toe::to_json),
         ("tic_tac_toe_from_json", 1, tic_tac_toe::from_json),
-        ("tic_tac_toe_to_bincode", 1, tic_tac_toe::to_bincode),
-        ("tic_tac_toe_from_bincode", 1, tic_tac_toe::from_bincode),
     ],
     Some(load)
 }
