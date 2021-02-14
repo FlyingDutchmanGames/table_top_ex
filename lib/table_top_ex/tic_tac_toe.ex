@@ -9,40 +9,6 @@ defmodule TableTopEx.TicTacToe do
   @type position :: {0..2, 0..2}
   @type move :: {marker(), position()}
 
-  defmodule InPlace do
-    alias TableTopEx.TicTacToe
-
-    defguard on_board?(x) when x in [0, 1, 2]
-    defguard valid_marker?(marker) when marker in [:x, :o]
-
-    @spec clone(%TicTacToe{}) :: %TicTacToe{}
-    def clone(%TicTacToe{_ref: ref}) do
-      {:ok, new_ref} = NifBridge.tic_tac_toe_clone(ref)
-      %TicTacToe{_ref: new_ref}
-    end
-
-    @spec undo(%TicTacToe{}) :: {:ok, nil | TicTacToe.move()}
-    def undo(%TicTacToe{_ref: ref}) do
-      NifBridge.tic_tac_toe_undo(ref)
-    end
-
-    @spec make_move(%TicTacToe{}, TicTacToe.marker(), TicTacToe.position()) ::
-            :ok | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-    def make_move(%TicTacToe{_ref: ref}, marker, {col, row} = position)
-        when on_board?(col) and on_board?(row) and valid_marker?(marker) do
-      NifBridge.tic_tac_toe_make_move(ref, marker, position)
-      |> case do
-        :position_outside_of_board = err -> {:error, err}
-        result -> result
-      end
-    end
-
-    def make_move(_game, marker, _position) when valid_marker?(marker),
-      do: {:error, :position_outside_of_board}
-
-    def make_move(_game, _marker, _position), do: {:error, :invalid_marker}
-  end
-
   defguard on_board?(x) when x in [0, 1, 2]
 
   @spec new() :: t()
@@ -89,22 +55,18 @@ defmodule TableTopEx.TicTacToe do
 
   def at_position(_game, _position), do: {:error, :position_outside_of_board}
 
-  @spec make_move(t(), marker(), position()) ::
+  @spec apply_action(t(), marker(), position()) ::
           {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-  def make_move(game, marker, position) do
-    new_game = InPlace.clone(game)
-
-    case InPlace.make_move(new_game, marker, position) do
-      :ok -> {:ok, new_game}
-      err -> err
+  def apply_action(%__MODULE__{_ref: ref}, marker, position) when marker in [:x, :o] do
+    case NifBridge.tic_tac_toe_apply_action(ref, marker, position) do
+      {:ok, new_ref} when is_reference(new_ref) -> {:ok, %__MODULE__{_ref: new_ref}}
+      {:error, err} -> {:error, err}
+      err when is_atom(err) -> {:error, err}
     end
   end
 
-  @spec undo(t()) :: {t(), move() | nil}
-  def undo(game) do
-    new_game = InPlace.clone(game)
-    {:ok, previous} = InPlace.undo(new_game)
-    {new_game, previous}
+  def apply_action(_ref, marker, _position) when marker not in [:x, :o] do
+    {:error, :invalid_marker}
   end
 
   @spec to_json(t()) :: {:ok, String.t()} | {:error, String.t()}
@@ -115,19 +77,6 @@ defmodule TableTopEx.TicTacToe do
   @spec from_json(String.t()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
   def from_json(json) when is_binary(json) do
     case NifBridge.tic_tac_toe_from_json(json) do
-      {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
-      {:error, err} -> {:error, err}
-    end
-  end
-
-  @spec to_bincode(t()) :: {:ok, String.t()} | {:error, String.t()}
-  def to_bincode(%__MODULE__{_ref: ref}) do
-    NifBridge.tic_tac_toe_to_bincode(ref)
-  end
-
-  @spec from_bincode(String.t()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
-  def from_bincode(json) when is_binary(json) do
-    case NifBridge.tic_tac_toe_from_bincode(json) do
       {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
       {:error, err} -> {:error, err}
     end

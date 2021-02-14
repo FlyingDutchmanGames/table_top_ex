@@ -10,9 +10,8 @@ use crate::games::tic_tac_toe;
 
 use lib_table_top::games::tic_tac_toe::GameState as TicTacToeGameState;
 use rustler::{Env, Term};
-use std::sync::Mutex;
 
-pub struct TicTacToeResource(Mutex<TicTacToeGameState>);
+struct TicTacToeResource(TicTacToeGameState);
 
 mod atoms {
     rustler_atoms! {
@@ -46,17 +45,13 @@ rustler::rustler_export_nifs! {
     [
         ("tic_tac_toe_available", 1, tic_tac_toe::available),
         ("tic_tac_toe_board", 1, tic_tac_toe::board),
-        ("tic_tac_toe_make_move", 3, tic_tac_toe::make_move),
+        ("tic_tac_toe_apply_action", 3, tic_tac_toe::apply_action),
         ("tic_tac_toe_new", 0, tic_tac_toe::new),
         ("tic_tac_toe_status", 1, tic_tac_toe::status),
         ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn),
         ("tic_tac_toe_history", 1, tic_tac_toe::history),
-        ("tic_tac_toe_clone", 1, tic_tac_toe::clone),
-        ("tic_tac_toe_undo", 1, tic_tac_toe::undo),
         ("tic_tac_toe_to_json", 1, tic_tac_toe::to_json),
         ("tic_tac_toe_from_json", 1, tic_tac_toe::from_json),
-        ("tic_tac_toe_to_bincode", 1, tic_tac_toe::to_bincode),
-        ("tic_tac_toe_from_bincode", 1, tic_tac_toe::from_bincode),
     ],
     Some(load)
 }
