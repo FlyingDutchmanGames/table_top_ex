@@ -59,8 +59,9 @@ defmodule TableTopEx.TicTacToe do
           {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
   def apply_action(%__MODULE__{_ref: ref}, marker, position) do
     case NifBridge.tic_tac_toe_apply_action(ref, marker, position) do
-      {:ok, new_ref} -> {:ok, %__MODULE__{_ref: new_ref}}
-      err -> err
+      {:ok, new_ref} when is_reference(new_ref) -> {:ok, %__MODULE__{_ref: new_ref}}
+      {:error, err} -> {:error, err}
+      err when is_atom(err) -> {:error, err}
     end
   end
 

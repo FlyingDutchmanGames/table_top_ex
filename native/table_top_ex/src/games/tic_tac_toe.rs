@@ -59,7 +59,10 @@ pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> 
     let position = ints_to_position(&args[2].decode()?)?;
 
     with_game_state(env, args, |game| match game.apply_action((player, position)) {
-        Ok(_) => Box::new(atoms::ok()),
+        Ok(new_game) => {
+            let game = ResourceArc::new(TicTacToeResource(new_game));
+            Box::new((atoms::ok(), game))
+        },
         Err(err) => {
             let error = match err {
                 SpaceIsTaken { .. } => atoms::space_is_taken(),
