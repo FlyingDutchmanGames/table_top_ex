@@ -5,7 +5,7 @@ defmodule TableTopEx.TicTacToe do
   defstruct [:_ref]
 
   @opaque t :: %__MODULE__{}
-  @type marker :: :x | :o
+  @type marker :: :P1 | :P2
   @type position :: {0..2, 0..2}
   @type move :: {marker(), position()}
 
@@ -57,7 +57,7 @@ defmodule TableTopEx.TicTacToe do
 
   @spec apply_action(t(), marker(), position()) ::
           {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-  def apply_action(%__MODULE__{_ref: ref}, marker, position) when marker in [:x, :o] do
+  def apply_action(%__MODULE__{_ref: ref}, marker, position) when marker in [:P1, :P2] do
     case NifBridge.tic_tac_toe_apply_action(ref, marker, position) do
       {:ok, new_ref} when is_reference(new_ref) -> {:ok, %__MODULE__{_ref: new_ref}}
       {:error, err} -> {:error, err}
@@ -65,7 +65,7 @@ defmodule TableTopEx.TicTacToe do
     end
   end
 
-  def apply_action(_ref, marker, _position) when marker not in [:x, :o] do
+  def apply_action(_ref, marker, _position) when marker not in [:P1, :P2] do
     {:error, :invalid_marker}
   end
 end

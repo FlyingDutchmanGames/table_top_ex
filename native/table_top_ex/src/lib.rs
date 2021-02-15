@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 #![feature(array_map)]
+#![allow(non_snake_case)]
 
 #[macro_use]
 extern crate rustler;
 
-mod common;
 mod games;
 use crate::games::tic_tac_toe;
 
@@ -28,10 +28,16 @@ mod atoms {
         // general
         atom win;
         atom lose;
+        atom P1;
+        atom P2;
+        atom P3;
+        atom P4;
+        atom P5;
+        atom P6;
+        atom P7;
+        atom P8;
 
         // tic tac toe
-        atom x;
-        atom o;
         atom in_progress;
         atom draw;
         atom space_is_taken;

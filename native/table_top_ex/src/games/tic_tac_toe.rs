@@ -88,10 +88,10 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 }
 
 fn atom_to_player(atom: rustler::Atom) -> Result<Player, Error> {
-    if atom == atoms::x() {
-        Ok(X)
-    } else if atom == atoms::o() {
-        Ok(O)
+    if atom == atoms::P1() {
+        Ok(P1)
+    } else if atom == atoms::P2() {
+        Ok(P2)
     } else {
         Err(Error::RaiseAtom("invalid_player"))
     }
@@ -99,8 +99,8 @@ fn atom_to_player(atom: rustler::Atom) -> Result<Player, Error> {
 
 fn player_to_atom(player: Player) -> rustler::Atom {
     match player {
-        X => atoms::x(),
-        O => atoms::o(),
+        P1 => atoms::P1(),
+        P2 => atoms::P2(),
     }
 }
 
