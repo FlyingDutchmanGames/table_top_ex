@@ -166,7 +166,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lib_table_top"
 version = "0.1.0"
-source = "git+https://github.com/FlyingDutchmanGames/lib_table_top#e5afe775a8710145aa6a1eebca751e25235cfa12"
+source = "git+https://github.com/FlyingDutchmanGames/lib_table_top#70a2340b500fe883a7c3212434581fdb09e2b1dd"
 dependencies = [
  "enum-map",
  "hex",
