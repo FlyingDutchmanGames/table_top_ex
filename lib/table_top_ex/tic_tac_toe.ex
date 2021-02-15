@@ -68,17 +68,4 @@ defmodule TableTopEx.TicTacToe do
   def apply_action(_ref, marker, _position) when marker not in [:x, :o] do
     {:error, :invalid_marker}
   end
-
-  @spec to_json(t()) :: {:ok, String.t()} | {:error, String.t()}
-  def to_json(%__MODULE__{_ref: ref}) do
-    NifBridge.tic_tac_toe_to_json(ref)
-  end
-
-  @spec from_json(String.t()) :: {:ok, %__MODULE__{}} | {:error, String.t()}
-  def from_json(json) when is_binary(json) do
-    case NifBridge.tic_tac_toe_from_json(json) do
-      {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
-      {:error, err} -> {:error, err}
-    end
-  end
 end
