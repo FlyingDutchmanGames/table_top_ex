@@ -11,109 +11,80 @@ pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
 }
 
 pub fn board<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| {
-        let board: Vec<Vec<rustler::Atom>> = game
-            .board()
-            .iter()
-            .map(|(_col_num, row)| {
-                row.iter()
-                    .map(|(_row_num, player)| player.map_or(atoms::nil(), player_to_atom))
-                    .collect()
-            })
-            .collect();
+    let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let board: Vec<Vec<rustler::Atom>> = game
+        .0
+        .board()
+        .iter()
+        .map(|(_col_num, row)| {
+            row.iter()
+                .map(|(_row_num, player)| player.map_or(atoms::nil(), player_to_atom))
+                .collect()
+        })
+        .collect();
 
-        Box::new((atoms::ok(), board))
-    })
+    Ok((atoms::ok(), board).encode(env))
 }
 
 pub fn available<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| {
-        let available: Vec<(u8, u8)> = game
-            .available()
-            .map(|position| position_to_ints(&position))
-            .collect();
+    let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    let available: Vec<(u8, u8)> = game
+        .0
+        .available()
+        .map(|position| position_to_ints(&position))
+        .collect();
 
-        Box::new((atoms::ok(), available))
-    })
+    Ok((atoms::ok(), available).encode(env))
 }
 
 pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| match game.status() {
-        InProgress => Box::new(atoms::in_progress()),
-        Draw => Box::new(atoms::draw()),
+    let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
+
+    match game.0.status() {
+        InProgress => Ok(atoms::in_progress().encode(env)),
+        Draw => Ok(atoms::draw().encode(env)),
         Win { player, positions } => {
             let spaces: Vec<(u8, u8)> = positions.map(|pos| position_to_ints(&pos)).into();
-            Box::new((atoms::win(), player_to_atom(player), spaces))
+            Ok((atoms::win(), player_to_atom(player), spaces).encode(env))
         }
-    })
+    }
 }
 
 pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| {
-        Box::new((atoms::ok(), player_to_atom(game.whose_turn())))
-    })
+    let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
+    Ok((atoms::ok(), player_to_atom(game.0.whose_turn())).encode(env))
 }
 
 pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
     let player = atom_to_player(args[1].decode()?)?;
     let position = ints_to_position(&args[2].decode()?)?;
 
-    with_game_state(env, args, |game| match game.apply_action((player, position)) {
+    match game.0.apply_action((player, position)) {
         Ok(new_game) => {
             let game = ResourceArc::new(TicTacToeResource(new_game));
-            Box::new((atoms::ok(), game))
-        },
+            Ok((atoms::ok(), game).encode(env))
+        }
         Err(err) => {
             let error = match err {
                 SpaceIsTaken { .. } => atoms::space_is_taken(),
                 OtherPlayerTurn { .. } => atoms::other_player_turn(),
             };
 
-            Box::new((atoms::error(), error))
+            Ok((atoms::error(), error).encode(env))
         }
-    })
-}
-
-pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| {
-        let hist: Vec<(rustler::Atom, (u8, u8))> = game
-            .history()
-            .map(|(player, position)| (player_to_atom(player), position_to_ints(&position)))
-            .collect();
-
-        Box::new((atoms::ok(), hist))
-    })
-}
-
-pub fn to_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    with_game_state(env, args, |game| {
-        let result = match serde_json::to_string(game) {
-            Ok(json) => (atoms::ok(), json),
-            Err(err) => (atoms::error(), err.to_string()),
-        };
-
-        Box::new(result)
-    })
-}
-
-pub fn from_json<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-    let encoded: &str = args[0].decode()?;
-    match serde_json::from_str::<GameState>(&encoded) {
-        Ok(game) => {
-            let resource = ResourceArc::new(TicTacToeResource(game));
-            Ok((atoms::ok(), resource).encode(env))
-        }
-        Err(err) => Ok((atoms::error(), err.to_string()).encode(env)),
     }
 }
 
-fn with_game_state<'a, F: FnOnce(&GameState) -> Box<dyn Encoder>>(
-    env: Env<'a>,
-    args: &[Term<'a>],
-    f: F,
-) -> NifResult<Term<'a>> {
+pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
-    Ok(f(&(game.0)).encode(env))
+    let hist: Vec<(rustler::Atom, (u8, u8))> = game
+        .0
+        .history()
+        .map(|(player, position)| (player_to_atom(player), position_to_ints(&position)))
+        .collect();
+
+    Ok((atoms::ok(), hist).encode(env))
 }
 
 fn atom_to_player(atom: rustler::Atom) -> Result<Player, Error> {
