@@ -52,7 +52,7 @@ pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 
 pub fn removed<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
-    let removed: Vec<_> = game.0.removed_positions().map(position_to_ints).collect();
+    let removed: Vec<_> = game.0.removed().map(position_to_ints).collect();
     Ok((atoms::ok(), removed).encode(env))
 }
 
@@ -61,7 +61,7 @@ pub fn removable_for_player<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Te
     let player: Player = atom_to_player(args[1].decode()?)?;
     let removable: Vec<_> = game
         .0
-        .removable_positions_for_player(player)
+        .removable_for_player(player)
         .map(position_to_ints)
         .collect();
     Ok((atoms::ok(), removable).encode(env))
