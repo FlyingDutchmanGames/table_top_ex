@@ -4,13 +4,15 @@
 
 #[macro_use]
 extern crate rustler;
-
-mod games;
-use crate::games::tic_tac_toe;
-
-use lib_table_top::games::tic_tac_toe::GameState as TicTacToeGameState;
 use rustler::{Env, Term};
 
+mod games;
+use crate::games::{marooned, tic_tac_toe};
+
+use lib_table_top::games::marooned::GameState as MaroonedGameState;
+use lib_table_top::games::tic_tac_toe::GameState as TicTacToeGameState;
+
+struct MaroonedResource(MaroonedGameState);
 struct TicTacToeResource(TicTacToeGameState);
 
 mod atoms {
@@ -49,6 +51,7 @@ mod atoms {
 rustler::rustler_export_nifs! {
     "Elixir.TableTopEx.NifBridge",
     [
+        // Tic Tac Toe
         ("tic_tac_toe_available", 1, tic_tac_toe::available),
         ("tic_tac_toe_board", 1, tic_tac_toe::board),
         ("tic_tac_toe_apply_action", 3, tic_tac_toe::apply_action),
@@ -56,11 +59,14 @@ rustler::rustler_export_nifs! {
         ("tic_tac_toe_status", 1, tic_tac_toe::status),
         ("tic_tac_toe_whose_turn", 1, tic_tac_toe::whose_turn),
         ("tic_tac_toe_history", 1, tic_tac_toe::history),
+        // Marooned
+        ("marooned_new", 0, marooned::new),
     ],
     Some(load)
 }
 
 fn load(env: Env, _info: Term) -> bool {
+    resource_struct_init!(MaroonedResource, env);
     resource_struct_init!(TicTacToeResource, env);
     true
 }
