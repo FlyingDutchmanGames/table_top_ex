@@ -44,7 +44,7 @@ pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 
     match game.0.status() {
         InProgress => Ok(atoms::in_progress().encode(env)),
-        Win { player } => { Ok((atoms::win(), player_to_atom(player)).encode(env)) }
+        Win { player } => Ok((atoms::win(), player_to_atom(player)).encode(env)),
     }
 }
 
@@ -54,16 +54,25 @@ pub fn removed<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), removed).encode(env))
 }
 
-pub fn removable<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+pub fn removable_for_player<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
-    let removable: Vec<_> = game.0.removable_positions().map(position_to_ints).collect();
+    let player: Player = atom_to_player(args[1].decode()?)?;
+    let removable: Vec<_> = game
+        .0
+        .removable_positions_for_player(player)
+        .map(position_to_ints)
+        .collect();
     Ok((atoms::ok(), removable).encode(env))
 }
 
-pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>>  {
+pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
     let player: Player = atom_to_player(args[1].decode()?)?;
-    Ok((atoms::ok(), position_to_ints(game.0.player_position(player))).encode(env))
+    Ok((
+        atoms::ok(),
+        position_to_ints(game.0.player_position(player)),
+    )
+        .encode(env))
 }
 
 fn position_to_ints((Col(col), Row(row)): Position) -> (u8, u8) {

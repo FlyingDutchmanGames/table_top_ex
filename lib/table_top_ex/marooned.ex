@@ -86,6 +86,7 @@ defmodule TableTopEx.Marooned do
 
       iex> game = Marooned.new()
       iex> Marooned.player_position(game, :something_random)
+      {:error, :invalid_player}
   """
   def player_position(%__MODULE__{_ref: ref} = _game, player) when player in [:P1, :P2] do
     {:ok, position} = NifBridge.marooned_player_position(ref, player)
@@ -107,13 +108,14 @@ defmodule TableTopEx.Marooned do
     removed
   end
 
-  @spec removable(t()) :: [position()]
+  @spec removable_for_player(t(), player()) :: [position()] | {:error, :invalid_player}
   @doc ~S"""
-  Returns all the positions that are removable, you can't remove the position your opponent
-  is standing on, but you can remove the one you're standing on
+  Returns all the positions that are removable for a player,
+  you can't remove the position your opponent is standing on,
+  but you can remove the one you're standing on.
 
       iex> game = Marooned.new()
-      iex> Marooned.removable(game)
+      iex> removable_for_p1 = Marooned.removable_for_player(game, :P1)
       [
         {0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7},
         {1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}, {1, 7},
@@ -122,9 +124,21 @@ defmodule TableTopEx.Marooned do
         {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4}, {4, 5}, {4, 6}, {4, 7},
         {5, 0}, {5, 1}, {5, 2}, {5, 3}, {5, 4}, {5, 5}, {5, 6}, {5, 7}
       ]
+      iex> Marooned.player_position(game, :P1) in removable_for_p1
+      true
+      iex> Marooned.player_position(game, :P2) in removable_for_p1
+      false
+
+  Invalid players are invalid
+
+      iex> game = Marooned.new()
+      iex> Marooned.player_position(game, :something_random)
+      {:error, :invalid_player}
   """
-  def removable(%__MODULE__{_ref: ref} = _game) do
-    {:ok, removable} = NifBridge.marooned_removable(ref)
+  def removable_for_player(%__MODULE__{_ref: ref} = _game, player) when player in [:P1, :P2] do
+    {:ok, removable} = NifBridge.marooned_removable_for_player(ref, player)
     removable
   end
+
+  def player_position(_game, _player), do: {:error, :invalid_player}
 end
