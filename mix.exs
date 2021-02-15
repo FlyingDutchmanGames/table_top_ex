@@ -23,7 +23,7 @@ defmodule TableTopEx.MixProject do
         # The main page in the docs
         main: "TableTopEx",
         # logo: "path/to/logo.png",
-        extras: []
+        extras: ["README.md"]
       ]
     ]
   end
