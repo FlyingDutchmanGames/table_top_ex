@@ -20,11 +20,11 @@ defmodule TableTopEx.Marooned do
 
   These only compare equal when the underlying data is the same ref
 
-  iex> game = Marooned.new()
-  iex> game == game
-  true
-  iex> game == Marooned.new()
-  false
+      iex> game = Marooned.new()
+      iex> game == game
+      true
+      iex> game == Marooned.new()
+      false
   """
   def new() do
     {:ok, ref} = NifBridge.marooned_new()
@@ -132,7 +132,7 @@ defmodule TableTopEx.Marooned do
   Invalid players are invalid
 
       iex> game = Marooned.new()
-      iex> Marooned.player_position(game, :something_random)
+      iex> Marooned.removable_for_player(game, :something_random)
       {:error, :invalid_player}
   """
   def removable_for_player(%__MODULE__{_ref: ref} = _game, player) when player in [:P1, :P2] do
@@ -140,5 +140,59 @@ defmodule TableTopEx.Marooned do
     removable
   end
 
-  def player_position(_game, _player), do: {:error, :invalid_player}
+  def removable_for_player(_game, _player), do: {:error, :invalid_player}
+
+  @spec apply_action(t(), Action.t()) :: {:ok, t()} | {:error, atom(), String.t()}
+  @doc ~S"""
+  Applies an action and returns a new game state if successful
+
+  ## Example
+
+      iex> game = Marooned.new()
+      iex> Marooned.player_position(game, :P1)
+      {3, 0}
+      iex> Marooned.removed(game)
+      []
+      iex> action = %Marooned.Action{to: {3, 1}, remove: {2, 3}, player: :P1}
+      iex> {:ok, game} = Marooned.apply_action(game, action)
+      iex> Marooned.removed(game)
+      [{2, 3}]
+      iex> Marooned.player_position(game, :P1)
+      {3, 1}
+
+  ## Possible Errors
+
+  You can't apply an action when it's not your turn
+
+      iex> game = Marooned.new()
+      iex> Marooned.apply_action(game, %Marooned.Action{player: :P2, to: {1, 2}, remove: {2, 3}})
+      {:error, :other_player_turn}
+
+  You can't remove a position off the board
+
+      iex> game = Marooned.new()
+      iex> Marooned.apply_action(game, %Marooned.Action{player: :P1, to: {3, 1}, remove: {100, 100}})
+      {:error, :invalid_remove}
+
+  You can't move to a non adjacent position (or off of the board)
+
+      iex> game = Marooned.new()
+      iex> Marooned.apply_action(game, %Marooned.Action{player: :P1, to: {3, 3}, remove: {1, 1}})
+      {:error, :invalid_move_to_target}
+
+  You can't remove the same position as you're trying to move to
+
+      iex> game = Marooned.new()
+      iex> Marooned.apply_action(game, %Marooned.Action{player: :P1, to: {1, 1}, remove: {1, 1}})
+      {:error, :cant_remove_the_same_position_as_move_to}
+  """
+  def apply_action(
+        %__MODULE__{_ref: ref} = _game,
+        %Action{player: player, to: to, remove: remove}
+      ) do
+    case NifBridge.marooned_apply_action(ref, {player, to, remove}) do
+      {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
+      err -> err
+    end
+  end
 end

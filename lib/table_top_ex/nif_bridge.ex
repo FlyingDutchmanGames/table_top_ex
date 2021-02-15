@@ -18,6 +18,7 @@ defmodule TableTopEx.NifBridge do
   def marooned_status(_game), do: err()
   def marooned_whose_turn(_game), do: err()
   def marooned_player_position(_game, _player), do: err()
+  def marooned_apply_action(_game, _action), do: err()
 
   defp err do
     :erlang.nif_error(:nif_not_loaded)

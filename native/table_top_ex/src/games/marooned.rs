@@ -2,7 +2,9 @@
 
 use crate::{atoms, MaroonedResource};
 use lib_table_top::games::marooned::{
-    Action, ActionError, Col, Dimensions, GameState,
+    Action,
+    ActionError::*,
+    Col, Dimensions, GameState,
     Player::{self, *},
     Position, Row, Settings, SettingsBuilder,
     SettingsError::*,
@@ -75,8 +77,38 @@ pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a
         .encode(env))
 }
 
+pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let (player, to, remove): (rustler::Atom, (u8, u8), (u8, u8)) = args[1].decode()?;
+    let action = Action {
+        player: atom_to_player(player)?,
+        remove: ints_to_position(remove),
+        to: ints_to_position(to),
+    };
+
+    match game.0.apply_action(action) {
+        Ok(game) => Ok((atoms::ok(), ResourceArc::new(MaroonedResource(game))).encode(env)),
+        Err(err) => match err {
+            OtherPlayerTurn { .. } => Ok((atoms::error(), atoms::other_player_turn()).encode(env)),
+            InvalidRemove { .. } => Ok((atoms::error(), atoms::invalid_remove()).encode(env)),
+            InvalidMoveToTarget { .. } => {
+                Ok((atoms::error(), atoms::invalid_move_to_target()).encode(env))
+            }
+            CantRemoveTheSamePositionAsMoveTo { .. } => Ok((
+                atoms::error(),
+                atoms::cant_remove_the_same_position_as_move_to(),
+            )
+                .encode(env)),
+        },
+    }
+}
+
 fn position_to_ints((Col(col), Row(row)): Position) -> (u8, u8) {
     (col, row)
+}
+
+fn ints_to_position((col, row): (u8, u8)) -> Position {
+    (Col(col), Row(row))
 }
 
 fn player_to_atom(player: Player) -> rustler::Atom {

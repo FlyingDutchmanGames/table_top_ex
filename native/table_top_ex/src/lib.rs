@@ -30,6 +30,7 @@ mod atoms {
         // general
         atom win;
         atom lose;
+        atom other_player_turn;
         atom P1;
         atom P2;
         atom P3;
@@ -39,12 +40,16 @@ mod atoms {
         atom P7;
         atom P8;
 
-        // tic tac toe
+        // TicTacToe
         atom in_progress;
         atom draw;
         atom space_is_taken;
-        atom other_player_turn;
         atom position_outside_of_board;
+
+        // Marooned
+        atom cant_remove_the_same_position_as_move_to;
+        atom invalid_move_to_target;
+        atom invalid_remove;
     }
 }
 
@@ -67,6 +72,7 @@ rustler::rustler_export_nifs! {
         ("marooned_removable_for_player", 2, marooned::removable_for_player),
         ("marooned_removed", 1, marooned::removed),
         ("marooned_player_position", 2, marooned::player_position),
+        ("marooned_apply_action", 2, marooned::apply_action),
     ],
     Some(load)
 }
