@@ -72,6 +72,28 @@ defmodule TableTopEx.Marooned do
     NifBridge.marooned_status(ref)
   end
 
+  @spec player_position(t(), player()) :: position() | {:error, :invalid_player}
+  @doc ~S"""
+  Returns the position of player
+
+      iex> game = Marooned.new()
+      iex> Marooned.player_position(game, :P1)
+      {3, 0}
+      iex> Marooned.player_position(game, :P2)
+      {2, 7}
+
+  Invalid players are invalid
+
+      iex> game = Marooned.new()
+      iex> Marooned.player_position(game, :something_random)
+  """
+  def player_position(%__MODULE__{_ref: ref} = _game, player) when player in [:P1, :P2] do
+    {:ok, position} = NifBridge.marooned_player_position(ref, player)
+    position
+  end
+
+  def player_position(_game, _player), do: {:error, :invalid_player}
+
   @spec removed(t()) :: [position()]
   @doc ~S"""
   Returns all the positions that have been removed
@@ -88,7 +110,7 @@ defmodule TableTopEx.Marooned do
   @spec removable(t()) :: [position()]
   @doc ~S"""
   Returns all the positions that are removable, you can't remove the position your opponent
-  is standing on
+  is standing on, but you can remove the one you're standing on
 
       iex> game = Marooned.new()
       iex> Marooned.removable(game)

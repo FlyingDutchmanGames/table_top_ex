@@ -66,6 +66,7 @@ rustler::rustler_export_nifs! {
         ("marooned_status", 1, marooned::status),
         ("marooned_removable", 1, marooned::removable),
         ("marooned_removed", 1, marooned::removed),
+        ("marooned_player_position", 2, marooned::player_position),
     ],
     Some(load)
 }

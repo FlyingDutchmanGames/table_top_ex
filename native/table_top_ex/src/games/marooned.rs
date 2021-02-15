@@ -60,6 +60,12 @@ pub fn removable<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), removable).encode(env))
 }
 
+pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>>  {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let player: Player = atom_to_player(args[1].decode()?)?;
+    Ok((atoms::ok(), position_to_ints(game.0.player_position(player))).encode(env))
+}
+
 fn position_to_ints((Col(col), Row(row)): Position) -> (u8, u8) {
     (col, row)
 }
@@ -68,5 +74,15 @@ fn player_to_atom(player: Player) -> rustler::Atom {
     match player {
         P1 => atoms::P1(),
         P2 => atoms::P2(),
+    }
+}
+
+fn atom_to_player(atom: rustler::Atom) -> Result<Player, Error> {
+    if atom == atoms::P1() {
+        Ok(P1)
+    } else if atom == atoms::P2() {
+        Ok(P2)
+    } else {
+        Err(Error::RaiseAtom("invalid_player"))
     }
 }
