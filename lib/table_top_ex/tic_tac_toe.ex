@@ -147,7 +147,7 @@ defmodule TableTopEx.TicTacToe do
     |> Enum.at(row_num)
   end
 
-  def at_position(_game, _position), do: {:error, :position_outside_of_board}
+  def at_position(_tic_tac_toe, _position), do: {:error, :position_outside_of_board}
 
   @doc ~S"""
   Applies an action to an existing `TicTacToe` game. On success this function returns a new ref
@@ -193,7 +193,8 @@ defmodule TableTopEx.TicTacToe do
   """
   @spec apply_action(t(), player(), position()) ::
           {:ok, t()} | {:error, :space_is_taken | :position_outside_of_board | :other_player_turn}
-  def apply_action(%__MODULE__{_ref: ref} = _game, player, position) when player in [:P1, :P2] do
+  def apply_action(%__MODULE__{_ref: ref} = _tic_tac_toe, player, position)
+      when player in [:P1, :P2] do
     case NifBridge.tic_tac_toe_apply_action(ref, player, position) do
       {:ok, new_ref} when is_reference(new_ref) -> {:ok, %__MODULE__{_ref: new_ref}}
       {:error, err} -> {:error, err}

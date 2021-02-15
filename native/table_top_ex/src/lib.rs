@@ -61,6 +61,7 @@ rustler::rustler_export_nifs! {
         ("tic_tac_toe_history", 1, tic_tac_toe::history),
         // Marooned
         ("marooned_new", 0, marooned::new),
+        ("marooned_whose_turn", 1, marooned::whose_turn),
     ],
     Some(load)
 }
