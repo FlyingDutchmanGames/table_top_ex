@@ -2,8 +2,11 @@
 
 use crate::{atoms, MaroonedResource};
 use lib_table_top::games::marooned::{
-    Action, ActionError, Col, Dimensions, GameState, Player::{self, *}, Position, Row, Settings,
-    SettingsBuilder, SettingsError::*, Status,
+    Action, ActionError, Col, Dimensions, GameState,
+    Player::{self, *},
+    Position, Row, Settings, SettingsBuilder,
+    SettingsError::*,
+    Status::*,
 };
 use rustler::resource::ResourceArc;
 use rustler::{Encoder, Env, Error, NifResult, Term};
@@ -19,16 +22,47 @@ pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), player_to_atom(game.0.whose_turn())).encode(env))
 }
 
-// pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
-//     let game: ResourceArc<TicTacToeResource> = args[0].decode()?;
-//     let hist: Vec<(rustler::Atom, (u8, u8))> = game
-//         .0
-//         .history()
-//         .map(|(player, position)| (player_to_atom(player), position_to_ints(&position)))
-//         .collect();
-// 
-//     Ok((atoms::ok(), hist).encode(env))
-// }
+pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let hist: Vec<_> = game
+        .0
+        .history()
+        .map(|Action { player, to, remove }| {
+            (
+                player_to_atom(*player),
+                position_to_ints(*to),
+                position_to_ints(*remove),
+            )
+        })
+        .collect();
+
+    Ok((atoms::ok(), hist).encode(env))
+}
+
+pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+
+    match game.0.status() {
+        InProgress => Ok(atoms::in_progress().encode(env)),
+        Win { player } => { Ok((atoms::win(), player_to_atom(player)).encode(env)) }
+    }
+}
+
+pub fn removed<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let removed: Vec<_> = game.0.removed_positions().map(position_to_ints).collect();
+    Ok((atoms::ok(), removed).encode(env))
+}
+
+pub fn removable<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let removable: Vec<_> = game.0.removable_positions().map(position_to_ints).collect();
+    Ok((atoms::ok(), removable).encode(env))
+}
+
+fn position_to_ints((Col(col), Row(row)): Position) -> (u8, u8) {
+    (col, row)
+}
 
 fn player_to_atom(player: Player) -> rustler::Atom {
     match player {

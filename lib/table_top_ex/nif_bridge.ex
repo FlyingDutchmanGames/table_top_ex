@@ -11,7 +11,11 @@ defmodule TableTopEx.NifBridge do
   def tic_tac_toe_whose_turn(_game), do: err()
 
   # Marooned
+  def marooned_history(_game), do: err()
   def marooned_new(), do: err()
+  def marooned_removable(_game), do: err()
+  def marooned_removed(_game), do: err()
+  def marooned_status(_game), do: err()
   def marooned_whose_turn(_game), do: err()
 
   defp err do

@@ -62,6 +62,10 @@ rustler::rustler_export_nifs! {
         // Marooned
         ("marooned_new", 0, marooned::new),
         ("marooned_whose_turn", 1, marooned::whose_turn),
+        ("marooned_history", 1, marooned::history),
+        ("marooned_status", 1, marooned::status),
+        ("marooned_removable", 1, marooned::removable),
+        ("marooned_removed", 1, marooned::removed),
     ],
     Some(load)
 }
