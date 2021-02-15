@@ -20,10 +20,22 @@ defmodule TableTopEx.MixProject do
       source_url: "https://github.com/FlyingDutchmanGames/table_top_ex",
       homepage_url: "https://github.com/FlyingDutchmanGames/table_top_ex",
       docs: [
-        # The main page in the docs
         main: "TableTopEx",
-        # logo: "path/to/logo.png",
-        extras: ["README.md"]
+        extras: ["README.md"],
+        groups_for_modules: [
+          TicTacToe: [
+            TableTopEx.TicTacToe
+          ],
+          Marooned: [
+            TableTopEx.Marooned,
+            TableTopEx.Marooned.Action,
+            TableTopEx.Marooned.Settings,
+            TableTopEx.Marooned.Settings.Dimensions
+          ],
+          "Nif Internals": [
+            TableTopEx.NifBridge
+          ]
+        ]
       ]
     ]
   end
