@@ -77,6 +77,20 @@ pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a
         .encode(env))
 }
 
+pub fn allowed_movement_targets_for_player<'a>(
+    env: Env<'a>,
+    args: &[Term<'a>],
+) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let player: Player = atom_to_player(args[1].decode()?)?;
+    let targets: Vec<(u8, u8)> = game
+        .0
+        .allowed_movement_targets_for_player(player)
+        .map(position_to_ints)
+        .collect();
+    Ok((atoms::ok(), targets).encode(env))
+}
+
 pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
     let (player, to, remove): (rustler::Atom, (u8, u8), (u8, u8)) = args[1].decode()?;
