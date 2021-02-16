@@ -35,6 +35,12 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), hist).encode(env))
 }
 
+pub fn dimensions<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let dimensions = game.0.dimensions();
+    Ok((dimensions.rows, dimensions.cols).encode(env))
+}
+
 pub fn valid_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
     let action = game.0.valid_actions().map(action_to_tuple).next();
@@ -76,11 +82,17 @@ pub fn removable_for_player<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Te
     Ok((atoms::ok(), removable).encode(env))
 }
 
-pub fn is_position_allowed_to_be_removed<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>>  {
+pub fn is_position_allowed_to_be_removed<'a>(
+    env: Env<'a>,
+    args: &[Term<'a>],
+) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
     let position: Position = ints_to_position(args[1].decode()?);
     let player: Player = atom_to_player(args[2].decode()?)?;
-    Ok(game.0.is_position_allowed_to_be_removed(position, player).encode(env))
+    Ok(game
+        .0
+        .is_position_allowed_to_be_removed(position, player)
+        .encode(env))
 }
 
 pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {

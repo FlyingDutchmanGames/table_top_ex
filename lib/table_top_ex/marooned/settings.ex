@@ -7,10 +7,10 @@ defmodule TableTopEx.Marooned.Settings do
       field(:cols, 0..255, defualt: 6)
     end
 
-    @spec(from_tuple({0..255, 0..255}), do: __MODULE__.t())
+    @spec from_tuple({0..255, 0..255}) :: __MODULE__.t()
     def from_tuple({rows, cols}), do: %__MODULE__{rows: rows, cols: cols}
 
-    @spec(to_tuple(__MODULE__.t()), do: {0..255, 0..255})
+    @spec to_tuple(__MODULE__.t()) :: {0..255, 0..255}
     def to_tuple(%__MODULE__{rows: rows, cols: cols}), do: {rows, cols}
   end
 

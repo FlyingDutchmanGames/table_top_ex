@@ -1,7 +1,7 @@
 defmodule TableTopEx.Marooned do
   alias TableTopEx.NifBridge
 
-  alias __MODULE__.Action
+  alias __MODULE__.{Action, Settings, Settings.Dimensions}
 
   @opaque t :: %__MODULE__{}
   @type player :: :P1 | :P2
@@ -44,6 +44,19 @@ defmodule TableTopEx.Marooned do
   def whose_turn(%__MODULE__{_ref: ref} = _game) do
     {:ok, player} = NifBridge.marooned_whose_turn(ref)
     player
+  end
+
+  @spec dimensions(t()) :: Dimensions.t()
+  @doc ~S"""
+  Returns the dimensions of a game
+
+      iex> game = Marooned.new()
+      iex> Marooned.dimensions(game)
+      %Marooned.Settings.Dimensions{cols: 6, rows: 8}
+  """
+  def dimensions(%__MODULE__{_ref: ref}) do
+    NifBridge.marooned_dimensions(ref)
+    |> Dimensions.from_tuple()
   end
 
   @spec history(t()) :: [Action.t()]
