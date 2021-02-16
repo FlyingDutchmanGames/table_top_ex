@@ -33,6 +33,55 @@ defmodule TableTopEx.Marooned do
     %__MODULE__{_ref: ref}
   end
 
+  @spec new_from_settings(Settings.t()) :: {:ok, t()} | {:error, :foo}
+  @doc ~S"""
+  Creates a new instance of marooned from some given settings (or returns an error)
+
+      iex> {:ok, game} = Marooned.new_from_settings(%Marooned.Settings{
+      ...>   dimensions: %{ rows: 20, cols: 21 },
+      ...>   starting_removed: [{0, 0}, {1, 1}]
+      ...> })
+      iex> Marooned.dimensions(game)
+      %Marooned.Settings.Dimensions{rows: 20, cols: 21}
+      iex> Marooned.removed(game)
+      [{0, 0}, {1, 1}]
+
+  # Errors
+
+  No dimension may be equal to 0, and rows * cols must be >= 2
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   dimensions: %{ rows: 0, cols: 1 }
+      ...> })
+      {:error, :invalid_dimensions}
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   dimensions: %{ rows: 1, cols: 1 }
+      ...> })
+      {:error, :invalid_dimensions}
+
+  You can't remove a posiion off of the board
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   starting_removed: [{250, 250}]
+      ...> })
+      {:error, :cant_remove_position_not_on_board}
+  """
+  def new_from_settings(%Settings{} = settings) do
+    dimensions =
+      Map.from_struct(%Dimensions{})
+      |> Map.merge(settings.dimensions || %{})
+
+    NifBridge.marooned_new_from_settings(%{
+      rows: dimensions.rows,
+      cols: dimensions.cols,
+      starting_removed: settings.starting_removed
+    })
+    |> case do
+      {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
+      {:error, err} -> {:error, err}
+    end
+  end
+
   @spec whose_turn(t()) :: player()
   @doc ~S"""
   Returns the player who's turn it currently is. All games start with P1.
@@ -69,7 +118,7 @@ defmodule TableTopEx.Marooned do
         dimensions: %Marooned.Settings.Dimensions{cols: 6, rows: 8},
         p1_starting: {3, 0},
         p2_starting: {2, 7},
-        starting_removed_positions: []
+        starting_removed: []
       }
   """
   def settings(%__MODULE__{_ref: ref} = _game) do

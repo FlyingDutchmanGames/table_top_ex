@@ -11,12 +11,55 @@ use lib_table_top::games::marooned::{
     Status::*,
 };
 use rustler::resource::ResourceArc;
-use rustler::{Encoder, Env, Error, NifResult, Term};
+use rustler::types::map::MapIterator;
+use rustler::{Atom, Encoder, Env, Error, NifResult, Term};
 
 pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game = SettingsBuilder::new().build_game().unwrap();
     let resource = ResourceArc::new(MaroonedResource(game));
     Ok((atoms::ok(), resource).encode(env))
+}
+
+pub fn new_from_settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let iter: MapIterator = args[0].decode()?;
+    let mut settings_builder = SettingsBuilder::new();
+
+    for (key, val) in iter {
+        match key.atom_to_string()?.as_str() {
+            "rows" => settings_builder = settings_builder.rows(val.decode()?),
+            "cols" => settings_builder = settings_builder.cols(val.decode()?),
+            // "p1_starting" => {
+            //     let position: Position = ints_to_position(val.decode()?);
+            //     settings_builder = settings_builder.p1_starting(position);
+            // }
+            // "p2_starting" => {
+            //     let position: Position = ints_to_position(val.decode()?);
+            //     settings_builder = settings_builder.p2_starting(position);
+            // }
+             "starting_removed" => {
+                 let removed = val.decode::<Vec<(u8, u8)>>()?.iter().map(|&pos| ints_to_position(pos)).collect();
+                 settings_builder = settings_builder.starting_removed(removed);
+             }
+            _ => {}
+        }
+    }
+
+    match settings_builder.build_game() {
+        Ok(game) => Ok((atoms::ok(), ResourceArc::new(MaroonedResource(game))).encode(env)),
+        Err(err) => {
+            let err: Atom = match err {
+                InvalidDimensions => atoms::invalid_dimensions(),
+                CantRemovePositionNotOnBoard { .. } => atoms::cant_remove_position_not_on_board(),
+                PlayersCantStartAtSamePosition => atoms::players_cant_start_at_same_position(),
+                PlayersMustStartOnBoard { .. } => atoms::players_must_start_on_board(),
+                PlayerCantStartOnRemovedSquare { .. } => {
+                    atoms::player_cant_start_on_removed_square()
+                }
+            };
+
+            Ok((atoms::error(), err).encode(env))
+        }
+    }
 }
 
 pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {

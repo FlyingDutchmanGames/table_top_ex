@@ -13,6 +13,7 @@ defmodule TableTopEx.NifBridge do
   # Marooned
   def marooned_history(_game), do: err()
   def marooned_new(), do: err()
+  def marooned_new_from_settings(_settings), do: err()
   def marooned_removable_for_player(_game, _player), do: err()
   def marooned_removed(_game), do: err()
   def marooned_status(_game), do: err()
