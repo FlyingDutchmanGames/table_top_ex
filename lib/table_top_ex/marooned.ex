@@ -54,9 +54,27 @@ defmodule TableTopEx.Marooned do
       iex> Marooned.dimensions(game)
       %Marooned.Settings.Dimensions{cols: 6, rows: 8}
   """
-  def dimensions(%__MODULE__{_ref: ref}) do
+  def dimensions(%__MODULE__{_ref: ref} = _game) do
     NifBridge.marooned_dimensions(ref)
     |> Dimensions.from_tuple()
+  end
+
+  @spec settings(t()) :: Settings.t()
+  @doc ~S"""
+  Returns the game settings
+
+      iex> game = Marooned.new()
+      iex> Marooned.settings(game)
+      %Marooned.Settings{
+        dimensions: %Marooned.Settings.Dimensions{cols: 6, rows: 8},
+        p1_starting: {3, 0},
+        p2_starting: {2, 7},
+        starting_removed_positions: []
+      }
+  """
+  def settings(%__MODULE__{_ref: ref} = _game) do
+    NifBridge.marooned_settings(ref)
+    |> Settings.from_tuple()
   end
 
   @spec history(t()) :: [Action.t()]

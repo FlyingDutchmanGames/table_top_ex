@@ -77,7 +77,8 @@ rustler::rustler_export_nifs! {
         ("marooned_valid_action", 1, marooned::valid_action),
         ("marooned_valid_actions", 1, marooned::valid_actions),
         ("marooned_is_position_allowed_to_be_removed", 3, marooned::is_position_allowed_to_be_removed),
-        ("marooned_dimensions", 1, marooned::dimensions)
+        ("marooned_dimensions", 1, marooned::dimensions),
+        ("marooned_settings", 1, marooned::settings)
     ],
     Some(load)
 }

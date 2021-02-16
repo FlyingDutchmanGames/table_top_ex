@@ -24,6 +24,7 @@ defmodule TableTopEx.NifBridge do
   def marooned_valid_actions(_game), do: err()
   def marooned_is_position_allowed_to_be_removed(_game, _position, _player), do: err()
   def marooned_dimensions(_game), do: err()
+  def marooned_settings(_game), do: err()
 
   defp err do
     :erlang.nif_error(:nif_not_loaded)

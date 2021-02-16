@@ -38,7 +38,13 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
 pub fn dimensions<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
     let dimensions = game.0.dimensions();
-    Ok((dimensions.rows, dimensions.cols).encode(env))
+    Ok(dimensions_to_tuple(dimensions).encode(env))
+}
+
+pub fn settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let settings = game.0.settings();
+    Ok(settings_to_tuple(settings).encode(env))
 }
 
 pub fn valid_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -143,6 +149,23 @@ pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> 
                 .encode(env)),
         },
     }
+}
+
+fn settings_to_tuple(settings: &Settings) -> ((u8, u8), (u8, u8), (u8, u8), Vec<(u8, u8)>) {
+    (
+        dimensions_to_tuple(&settings.dimensions),
+        position_to_ints(settings.p1_starting),
+        position_to_ints(settings.p2_starting),
+        settings
+            .starting_removed
+            .iter()
+            .map(|&pos| position_to_ints(pos))
+            .collect(),
+    )
+}
+
+fn dimensions_to_tuple(dimensions: &Dimensions) -> (u8, u8) {
+    (dimensions.rows, dimensions.cols)
 }
 
 fn action_to_tuple(Action { to, remove, player }: Action) -> (rustler::Atom, (u8, u8), (u8, u8)) {
