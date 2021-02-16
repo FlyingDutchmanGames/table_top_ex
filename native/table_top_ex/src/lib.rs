@@ -76,6 +76,7 @@ rustler::rustler_export_nifs! {
         ("marooned_allowed_movement_targets_for_player", 2, marooned::allowed_movement_targets_for_player),
         ("marooned_valid_action", 1, marooned::valid_action),
         ("marooned_valid_actions", 1, marooned::valid_actions),
+        ("marooned_is_position_allowed_to_be_removed", 3, marooned::is_position_allowed_to_be_removed)
     ],
     Some(load)
 }

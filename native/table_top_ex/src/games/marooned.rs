@@ -76,6 +76,13 @@ pub fn removable_for_player<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Te
     Ok((atoms::ok(), removable).encode(env))
 }
 
+pub fn is_position_allowed_to_be_removed<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>>  {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let position: Position = ints_to_position(args[1].decode()?);
+    let player: Player = atom_to_player(args[2].decode()?)?;
+    Ok(game.0.is_position_allowed_to_be_removed(position, player).encode(env))
+}
+
 pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
     let player: Player = atom_to_player(args[1].decode()?)?;

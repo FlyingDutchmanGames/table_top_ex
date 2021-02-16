@@ -165,6 +165,27 @@ defmodule TableTopEx.Marooned do
 
   def removable_for_player(_game, _player), do: {:error, :invalid_player}
 
+  @spec is_position_allowed_to_be_removed?(t(), position(), player()) ::
+          boolean | {:error, :invalid_player}
+  @doc ~S"""
+  Fast path test to see if a position is allowed to be removed by a player
+
+      iex> game = Marooned.new()
+      iex> Marooned.is_position_allowed_to_be_removed?(game, {3, 3}, :P1)
+      true
+      iex> p2_position = Marooned.player_position(game, :P2)
+      iex> Marooned.is_position_allowed_to_be_removed?(game, p2_position, :P1)
+      false
+
+  ## Errors
+
+  This raises when called with an invalid player or a position that doesn't coerce to a (u8, u8)
+
+  """
+  def is_position_allowed_to_be_removed?(%__MODULE__{_ref: ref} = _game, position, player) do
+    NifBridge.marooned_is_position_allowed_to_be_removed(ref, position, player)
+  end
+
   @spec valid_action(t()) :: {:ok, Action.t()} | nil
   @doc ~S"""
   Returns a valid action. This is optimized under the hood for when you only need one action,
