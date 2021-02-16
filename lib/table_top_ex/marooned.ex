@@ -165,6 +165,22 @@ defmodule TableTopEx.Marooned do
 
   def removable_for_player(_game, _player), do: {:error, :invalid_player}
 
+  @spec valid_action(t()) :: {:ok, Action.t()} | nil
+  @doc ~S"""
+  Returns a valid action. This is optimized under the hood for when you only need one action,
+  i.e. having a default for when a player times out
+
+      iex> game = Marooned.new()
+      iex> Marooned.valid_action(game)
+      {:ok, %TableTopEx.Marooned.Action{player: :P1, remove: {0, 0}, to: {4, 1}}}
+  """
+  def valid_action(%__MODULE__{_ref: ref} = _game) do
+    case NifBridge.marooned_valid_action(ref) do
+      {:ok, action_tuple} -> {:ok, Action.from_tuple(action_tuple)}
+      nil -> nil
+    end
+  end
+
   @spec valid_actions(t()) :: [Action.t()]
   @doc ~S"""
   Returns a list of all the possible valid actions for the next turn. Roughly equal
@@ -175,7 +191,7 @@ defmodule TableTopEx.Marooned do
       iex> Marooned.valid_actions(game) |> length
       230
       iex> Marooned.valid_actions(game) |> List.first()
-      %TableTopEx.Marooned.Action{player: :P1, remove: {0, 0}, to: {4, 1}}
+      %Marooned.Action{player: :P1, remove: {0, 0}, to: {4, 1}}
   """
   def valid_actions(%__MODULE__{_ref: ref} = _game) do
     {:ok, actions} = NifBridge.marooned_valid_actions(ref)
