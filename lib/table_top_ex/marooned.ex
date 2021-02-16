@@ -35,7 +35,7 @@ defmodule TableTopEx.Marooned do
 
   @spec whose_turn(t()) :: player()
   @doc ~S"""
-  Returns the player who's turn it currently is. All games start with P1
+  Returns the player who's turn it currently is. All games start with P1.
 
       iex> game = Marooned.new()
       iex> Marooned.whose_turn(game)
@@ -48,7 +48,7 @@ defmodule TableTopEx.Marooned do
 
   @spec history(t()) :: [Action.t()]
   @doc ~S"""
-  Returns the history of the game
+  Returns the actions applied to the game in order.
 
       iex> game = Marooned.new()
       iex> Marooned.history(game)
@@ -56,10 +56,7 @@ defmodule TableTopEx.Marooned do
   """
   def history(%__MODULE__{_ref: ref} = _game) do
     {:ok, hist} = NifBridge.marooned_history(ref)
-
-    for {player, to, remove} <- hist do
-      %Action{player: player, to: to, remove: remove}
-    end
+    Enum.map(hist, &Action.from_tuple/1)
   end
 
   @spec status(t()) :: :in_progress | {:win, player()}
@@ -168,6 +165,23 @@ defmodule TableTopEx.Marooned do
 
   def removable_for_player(_game, _player), do: {:error, :invalid_player}
 
+  @spec valid_actions(t()) :: [Action.t()]
+  @doc ~S"""
+  Returns a list of all the possible valid actions for the next turn. Roughly equal
+  to the size of (Number of non removed squares * number of adjacent squares to player)
+
+
+      iex> game = Marooned.new()
+      iex> Marooned.valid_actions(game) |> length
+      230
+      iex> Marooned.valid_actions(game) |> List.first()
+      %TableTopEx.Marooned.Action{player: :P1, remove: {0, 0}, to: {4, 1}}
+  """
+  def valid_actions(%__MODULE__{_ref: ref} = _game) do
+    {:ok, actions} = NifBridge.marooned_valid_actions(ref)
+    Enum.map(actions, &Action.from_tuple/1)
+  end
+
   @spec apply_action(t(), Action.t()) :: {:ok, t()} | {:error, atom(), String.t()}
   @doc ~S"""
   Applies an action and returns a new game state if successful
@@ -235,11 +249,8 @@ defmodule TableTopEx.Marooned do
   def apply_action(_game, %Action{player: player}) when player not in [:P1, :P2],
     do: {:error, :invalid_player}
 
-  def apply_action(
-        %__MODULE__{_ref: ref} = _game,
-        %Action{player: player, to: to, remove: remove}
-      ) do
-    case NifBridge.marooned_apply_action(ref, {player, to, remove}) do
+  def apply_action(%__MODULE__{_ref: ref} = _game, %Action{} = action) do
+    case NifBridge.marooned_apply_action(ref, Action.to_tuple(action)) do
       {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
       err -> err
     end

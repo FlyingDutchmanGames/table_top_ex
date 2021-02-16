@@ -29,16 +29,16 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let hist: Vec<_> = game
         .0
         .history()
-        .map(|Action { player, to, remove }| {
-            (
-                player_to_atom(*player),
-                position_to_ints(*to),
-                position_to_ints(*remove),
-            )
-        })
+        .map(|&action| action_to_tuple(action))
         .collect();
 
     Ok((atoms::ok(), hist).encode(env))
+}
+
+pub fn valid_actions<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>>  {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let actions: Vec<_> = game.0.valid_actions().map(action_to_tuple).collect();
+    Ok((atoms::ok(), actions).encode(env))
 }
 
 pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -115,6 +115,10 @@ pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> 
                 .encode(env)),
         },
     }
+}
+
+fn action_to_tuple(Action { to, remove, player }: Action) -> (rustler::Atom, (u8, u8), (u8, u8)) {
+    (player_to_atom(player), position_to_ints(to), position_to_ints(remove))
 }
 
 fn position_to_ints((Col(col), Row(row)): Position) -> (u8, u8) {
