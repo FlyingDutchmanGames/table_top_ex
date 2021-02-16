@@ -10,6 +10,8 @@ defmodule TableTopEx.Marooned do
   @enforce_keys [:_ref]
   defstruct [:_ref]
 
+  defguardp u8?(x) when x >= 0 and x <= 255
+
   @spec new() :: t()
   @doc ~S"""
   Creates a new instance of Marooned with default settings
@@ -33,7 +35,7 @@ defmodule TableTopEx.Marooned do
 
   @spec whose_turn(t()) :: player()
   @doc ~S"""
-  Returns the player who's turn it currently is. All games start with P1
+  Returns the player who's turn it currently is. All games start with P1.
 
       iex> game = Marooned.new()
       iex> Marooned.whose_turn(game)
@@ -46,7 +48,7 @@ defmodule TableTopEx.Marooned do
 
   @spec history(t()) :: [Action.t()]
   @doc ~S"""
-  Returns the history of the game
+  Returns the actions applied to the game in order.
 
       iex> game = Marooned.new()
       iex> Marooned.history(game)
@@ -54,10 +56,7 @@ defmodule TableTopEx.Marooned do
   """
   def history(%__MODULE__{_ref: ref} = _game) do
     {:ok, hist} = NifBridge.marooned_history(ref)
-
-    for {player, to, remove} <- hist do
-      %Action{player: player, to: to, remove: remove}
-    end
+    Enum.map(hist, &Action.from_tuple/1)
   end
 
   @spec status(t()) :: :in_progress | {:win, player()}
@@ -94,6 +93,30 @@ defmodule TableTopEx.Marooned do
   end
 
   def player_position(_game, _player), do: {:error, :invalid_player}
+
+  @spec allowed_movement_targets_for_player(t(), player()) :: [position()]
+  @doc ~S"""
+
+  Allowed movements of a player, this takes into account board dimensions,
+  removed positions, and the opponent location.
+
+      iex> game = Marooned.new()
+      iex> Marooned.allowed_movement_targets_for_player(game, :P1)
+      [{4, 1}, {4, 0}, {3, 1}, {2, 1}, {2, 0}]
+
+  ## Possible Errors
+
+      iex> game = Marooned.new()
+      iex> Marooned.allowed_movement_targets_for_player(game, :something_random)
+      {:error, :invalid_player}
+  """
+  def allowed_movement_targets_for_player(%__MODULE__{_ref: ref} = _game, player)
+      when player in [:P1, :P2] do
+    {:ok, positions} = NifBridge.marooned_allowed_movement_targets_for_player(ref, player)
+    positions
+  end
+
+  def allowed_movement_targets_for_player(_game, _player), do: {:error, :invalid_player}
 
   @spec removed(t()) :: [position()]
   @doc ~S"""
@@ -142,6 +165,60 @@ defmodule TableTopEx.Marooned do
 
   def removable_for_player(_game, _player), do: {:error, :invalid_player}
 
+  @spec is_position_allowed_to_be_removed?(t(), position(), player()) ::
+          boolean | {:error, :invalid_player}
+  @doc ~S"""
+  Fast path test to see if a position is allowed to be removed by a player
+
+      iex> game = Marooned.new()
+      iex> Marooned.is_position_allowed_to_be_removed?(game, {3, 3}, :P1)
+      true
+      iex> p2_position = Marooned.player_position(game, :P2)
+      iex> Marooned.is_position_allowed_to_be_removed?(game, p2_position, :P1)
+      false
+
+  ## Errors
+
+  This raises when called with an invalid player or a position that doesn't coerce to a (u8, u8)
+
+  """
+  def is_position_allowed_to_be_removed?(%__MODULE__{_ref: ref} = _game, position, player) do
+    NifBridge.marooned_is_position_allowed_to_be_removed(ref, position, player)
+  end
+
+  @spec valid_action(t()) :: {:ok, Action.t()} | nil
+  @doc ~S"""
+  Returns a valid action. This is optimized under the hood for when you only need one action,
+  i.e. having a default for when a player times out
+
+      iex> game = Marooned.new()
+      iex> Marooned.valid_action(game)
+      {:ok, %TableTopEx.Marooned.Action{player: :P1, remove: {0, 0}, to: {4, 1}}}
+  """
+  def valid_action(%__MODULE__{_ref: ref} = _game) do
+    case NifBridge.marooned_valid_action(ref) do
+      {:ok, action_tuple} -> {:ok, Action.from_tuple(action_tuple)}
+      nil -> nil
+    end
+  end
+
+  @spec valid_actions(t()) :: [Action.t()]
+  @doc ~S"""
+  Returns a list of all the possible valid actions for the next turn. Roughly equal
+  to the size of (Number of non removed squares * number of adjacent squares to player)
+
+
+      iex> game = Marooned.new()
+      iex> Marooned.valid_actions(game) |> length
+      230
+      iex> Marooned.valid_actions(game) |> List.first()
+      %Marooned.Action{player: :P1, remove: {0, 0}, to: {4, 1}}
+  """
+  def valid_actions(%__MODULE__{_ref: ref} = _game) do
+    {:ok, actions} = NifBridge.marooned_valid_actions(ref)
+    Enum.map(actions, &Action.from_tuple/1)
+  end
+
   @spec apply_action(t(), Action.t()) :: {:ok, t()} | {:error, atom(), String.t()}
   @doc ~S"""
   Applies an action and returns a new game state if successful
@@ -168,7 +245,21 @@ defmodule TableTopEx.Marooned do
       iex> Marooned.apply_action(game, %Marooned.Action{player: :P2, to: {1, 2}, remove: {2, 3}})
       {:error, :other_player_turn}
 
-  You can't remove a position off the board
+  You have to use a valid player
+
+      iex> game = Marooned.new()
+      iex> Marooned.apply_action(game, %Marooned.Action{player: :something_random, to: {1, 2}, remove: {2, 3}})
+      {:error, :invalid_player}
+
+  All positions have to be castable as `u8`s
+
+      iex> game = Marooned.new()
+      iex> Marooned.apply_action(game, %Marooned.Action{player: :P1, to: {1, 1}, remove: {0, -1}})
+      {:error, :invalid_remove}
+      iex> Marooned.apply_action(game, %Marooned.Action{player: :P1, to: {100_000, 1}, remove: {0, 0}})
+      {:error, :invalid_move_to_target}
+
+  You can't remove a position off the board even if it's a valid u8
 
       iex> game = Marooned.new()
       iex> Marooned.apply_action(game, %Marooned.Action{player: :P1, to: {3, 1}, remove: {100, 100}})
@@ -186,11 +277,17 @@ defmodule TableTopEx.Marooned do
       iex> Marooned.apply_action(game, %Marooned.Action{player: :P1, to: {1, 1}, remove: {1, 1}})
       {:error, :cant_remove_the_same_position_as_move_to}
   """
-  def apply_action(
-        %__MODULE__{_ref: ref} = _game,
-        %Action{player: player, to: to, remove: remove}
-      ) do
-    case NifBridge.marooned_apply_action(ref, {player, to, remove}) do
+  def apply_action(_game, %Action{remove: {x, y}}) when not u8?(x) or not u8?(y),
+    do: {:error, :invalid_remove}
+
+  def apply_action(_game, %Action{to: {x, y}}) when not u8?(x) or not u8?(y),
+    do: {:error, :invalid_move_to_target}
+
+  def apply_action(_game, %Action{player: player}) when player not in [:P1, :P2],
+    do: {:error, :invalid_player}
+
+  def apply_action(%__MODULE__{_ref: ref} = _game, %Action{} = action) do
+    case NifBridge.marooned_apply_action(ref, Action.to_tuple(action)) do
       {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
       err -> err
     end
