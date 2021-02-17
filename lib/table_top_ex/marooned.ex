@@ -1,7 +1,7 @@
 defmodule TableTopEx.Marooned do
   alias TableTopEx.NifBridge
 
-  alias __MODULE__.Action
+  alias __MODULE__.{Action, Settings, Settings.Dimensions}
 
   @opaque t :: %__MODULE__{}
   @type player :: :P1 | :P2
@@ -33,6 +33,94 @@ defmodule TableTopEx.Marooned do
     %__MODULE__{_ref: ref}
   end
 
+  @spec new_from_settings(Settings.t()) :: {:ok, t()} | {:error, :foo}
+  @doc ~S"""
+  Creates a new instance of marooned from some given settings (or returns an error)
+
+      iex> {:ok, game} = Marooned.new_from_settings(%Marooned.Settings{
+      ...>   dimensions: %{rows: 20, cols: 21},
+      ...>   starting_removed: [{0, 0}, {1, 1}],
+      ...>   p1_starting: {1, 2},
+      ...>   p2_starting: {3, 4},
+      ...> })
+      iex> Marooned.dimensions(game)
+      %Marooned.Settings.Dimensions{rows: 20, cols: 21}
+      iex> Marooned.removed(game)
+      [{0, 0}, {1, 1}]
+      iex> Marooned.player_position(game, :P1)
+      {1, 2}
+      iex> Marooned.player_position(game, :P2)
+      {3, 4}
+
+  # Errors
+
+  No dimension may be equal to 0, and rows * cols must be >= 2
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   dimensions: %{ rows: 0, cols: 1 }
+      ...> })
+      {:error, :invalid_dimensions}
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   dimensions: %{ rows: 1, cols: 1 }
+      ...> })
+      {:error, :invalid_dimensions}
+
+  You can't remove a posiion off of the board
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   starting_removed: [{250, 250}]
+      ...> })
+      {:error, :cant_remove_position_not_on_board}
+
+  You can't remove the same position a player is starting at
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   starting_removed: [{0, 0}],
+      ...>   p1_starting: {0, 0}
+      ...> })
+      {:error, :player_cant_start_on_removed_square}
+
+  Players can't start at the same positon
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   p1_starting: {0, 0},
+      ...>   p2_starting: {0, 0}
+      ...> })
+      {:error, :players_cant_start_at_same_position}
+
+  Players must start on the board
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   p1_starting: {50, 50},
+      ...> })
+      {:error, :players_must_start_on_board}
+
+  """
+  def new_from_settings(%Settings{} = settings) do
+    dimensions =
+      Map.from_struct(%Dimensions{})
+      |> Map.merge(settings.dimensions || %{})
+
+    opts = %{
+      rows: dimensions.rows,
+      cols: dimensions.cols,
+      starting_removed: settings.starting_removed
+    }
+
+    opts =
+      Enum.reduce(~w(p1_starting p2_starting)a, opts, fn key, opts ->
+        if val = Map.get(settings, key),
+          do: Map.put(opts, key, val),
+          else: opts
+      end)
+
+    NifBridge.marooned_new_from_settings(opts)
+    |> case do
+      {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
+      {:error, err} -> {:error, err}
+    end
+  end
+
   @spec whose_turn(t()) :: player()
   @doc ~S"""
   Returns the player who's turn it currently is. All games start with P1.
@@ -44,6 +132,37 @@ defmodule TableTopEx.Marooned do
   def whose_turn(%__MODULE__{_ref: ref} = _game) do
     {:ok, player} = NifBridge.marooned_whose_turn(ref)
     player
+  end
+
+  @spec dimensions(t()) :: Dimensions.t()
+  @doc ~S"""
+  Returns the dimensions of a game
+
+      iex> game = Marooned.new()
+      iex> Marooned.dimensions(game)
+      %Marooned.Settings.Dimensions{cols: 6, rows: 8}
+  """
+  def dimensions(%__MODULE__{_ref: ref} = _game) do
+    NifBridge.marooned_dimensions(ref)
+    |> Dimensions.from_tuple()
+  end
+
+  @spec settings(t()) :: Settings.t()
+  @doc ~S"""
+  Returns the game settings
+
+      iex> game = Marooned.new()
+      iex> Marooned.settings(game)
+      %Marooned.Settings{
+        dimensions: %Marooned.Settings.Dimensions{cols: 6, rows: 8},
+        p1_starting: {3, 0},
+        p2_starting: {2, 7},
+        starting_removed: []
+      }
+  """
+  def settings(%__MODULE__{_ref: ref} = _game) do
+    NifBridge.marooned_settings(ref)
+    |> Settings.from_tuple()
   end
 
   @spec history(t()) :: [Action.t()]

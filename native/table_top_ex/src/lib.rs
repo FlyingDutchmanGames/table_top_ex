@@ -50,6 +50,11 @@ mod atoms {
         atom cant_remove_the_same_position_as_move_to;
         atom invalid_move_to_target;
         atom invalid_remove;
+        atom invalid_dimensions;
+        atom cant_remove_position_not_on_board;
+        atom players_cant_start_at_same_position;
+        atom players_must_start_on_board;
+        atom player_cant_start_on_removed_square;
     }
 }
 
@@ -66,6 +71,7 @@ rustler::rustler_export_nifs! {
         ("tic_tac_toe_history", 1, tic_tac_toe::history),
         // Marooned
         ("marooned_new", 0, marooned::new),
+        ("marooned_new_from_settings", 1, marooned::new_from_settings),
         ("marooned_whose_turn", 1, marooned::whose_turn),
         ("marooned_history", 1, marooned::history),
         ("marooned_status", 1, marooned::status),
@@ -76,7 +82,9 @@ rustler::rustler_export_nifs! {
         ("marooned_allowed_movement_targets_for_player", 2, marooned::allowed_movement_targets_for_player),
         ("marooned_valid_action", 1, marooned::valid_action),
         ("marooned_valid_actions", 1, marooned::valid_actions),
-        ("marooned_is_position_allowed_to_be_removed", 3, marooned::is_position_allowed_to_be_removed)
+        ("marooned_is_position_allowed_to_be_removed", 3, marooned::is_position_allowed_to_be_removed),
+        ("marooned_dimensions", 1, marooned::dimensions),
+        ("marooned_settings", 1, marooned::settings)
     ],
     Some(load)
 }

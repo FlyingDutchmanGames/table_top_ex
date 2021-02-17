@@ -11,12 +11,55 @@ use lib_table_top::games::marooned::{
     Status::*,
 };
 use rustler::resource::ResourceArc;
-use rustler::{Encoder, Env, Error, NifResult, Term};
+use rustler::types::map::MapIterator;
+use rustler::{Atom, Encoder, Env, Error, NifResult, Term};
 
 pub fn new<'a>(env: Env<'a>, _args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let game = SettingsBuilder::new().build_game().unwrap();
     let resource = ResourceArc::new(MaroonedResource(game));
     Ok((atoms::ok(), resource).encode(env))
+}
+
+pub fn new_from_settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let iter: MapIterator = args[0].decode()?;
+    let mut settings_builder = SettingsBuilder::new();
+
+    for (key, val) in iter {
+        match key.atom_to_string()?.as_str() {
+            "rows" => settings_builder = settings_builder.rows(val.decode()?),
+            "cols" => settings_builder = settings_builder.cols(val.decode()?),
+            "p1_starting" => {
+                let position: Position = ints_to_position(val.decode()?);
+                settings_builder = settings_builder.p1_starting(position);
+            }
+            "p2_starting" => {
+                let position: Position = ints_to_position(val.decode()?);
+                settings_builder = settings_builder.p2_starting(position);
+            }
+             "starting_removed" => {
+                 let removed = val.decode::<Vec<(u8, u8)>>()?.iter().map(|&pos| ints_to_position(pos)).collect();
+                 settings_builder = settings_builder.starting_removed(removed);
+             }
+            _ => {}
+        }
+    }
+
+    match settings_builder.build_game() {
+        Ok(game) => Ok((atoms::ok(), ResourceArc::new(MaroonedResource(game))).encode(env)),
+        Err(err) => {
+            let err: Atom = match err {
+                InvalidDimensions => atoms::invalid_dimensions(),
+                CantRemovePositionNotOnBoard { .. } => atoms::cant_remove_position_not_on_board(),
+                PlayersCantStartAtSamePosition => atoms::players_cant_start_at_same_position(),
+                PlayersMustStartOnBoard { .. } => atoms::players_must_start_on_board(),
+                PlayerCantStartOnRemovedSquare { .. } => {
+                    atoms::player_cant_start_on_removed_square()
+                }
+            };
+
+            Ok((atoms::error(), err).encode(env))
+        }
+    }
 }
 
 pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -33,6 +76,18 @@ pub fn history<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
         .collect();
 
     Ok((atoms::ok(), hist).encode(env))
+}
+
+pub fn dimensions<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let dimensions = game.0.dimensions();
+    Ok(dimensions_to_tuple(dimensions).encode(env))
+}
+
+pub fn settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<MaroonedResource> = args[0].decode()?;
+    let settings = game.0.settings();
+    Ok(settings_to_tuple(settings).encode(env))
 }
 
 pub fn valid_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -76,11 +131,17 @@ pub fn removable_for_player<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Te
     Ok((atoms::ok(), removable).encode(env))
 }
 
-pub fn is_position_allowed_to_be_removed<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>>  {
+pub fn is_position_allowed_to_be_removed<'a>(
+    env: Env<'a>,
+    args: &[Term<'a>],
+) -> NifResult<Term<'a>> {
     let game: ResourceArc<MaroonedResource> = args[0].decode()?;
     let position: Position = ints_to_position(args[1].decode()?);
     let player: Player = atom_to_player(args[2].decode()?)?;
-    Ok(game.0.is_position_allowed_to_be_removed(position, player).encode(env))
+    Ok(game
+        .0
+        .is_position_allowed_to_be_removed(position, player)
+        .encode(env))
 }
 
 pub fn player_position<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
@@ -131,6 +192,23 @@ pub fn apply_action<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> 
                 .encode(env)),
         },
     }
+}
+
+fn settings_to_tuple(settings: &Settings) -> ((u8, u8), (u8, u8), (u8, u8), Vec<(u8, u8)>) {
+    (
+        dimensions_to_tuple(&settings.dimensions),
+        position_to_ints(settings.p1_starting),
+        position_to_ints(settings.p2_starting),
+        settings
+            .starting_removed
+            .iter()
+            .map(|&pos| position_to_ints(pos))
+            .collect(),
+    )
+}
+
+fn dimensions_to_tuple(dimensions: &Dimensions) -> (u8, u8) {
+    (dimensions.rows, dimensions.cols)
 }
 
 fn action_to_tuple(Action { to, remove, player }: Action) -> (rustler::Atom, (u8, u8), (u8, u8)) {

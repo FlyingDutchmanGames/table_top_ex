@@ -13,6 +13,7 @@ defmodule TableTopEx.NifBridge do
   # Marooned
   def marooned_history(_game), do: err()
   def marooned_new(), do: err()
+  def marooned_new_from_settings(_settings), do: err()
   def marooned_removable_for_player(_game, _player), do: err()
   def marooned_removed(_game), do: err()
   def marooned_status(_game), do: err()
@@ -23,6 +24,8 @@ defmodule TableTopEx.NifBridge do
   def marooned_valid_action(_game), do: err()
   def marooned_valid_actions(_game), do: err()
   def marooned_is_position_allowed_to_be_removed(_game, _position, _player), do: err()
+  def marooned_dimensions(_game), do: err()
+  def marooned_settings(_game), do: err()
 
   defp err do
     :erlang.nif_error(:nif_not_loaded)
