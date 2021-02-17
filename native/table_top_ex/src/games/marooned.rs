@@ -28,14 +28,14 @@ pub fn new_from_settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<
         match key.atom_to_string()?.as_str() {
             "rows" => settings_builder = settings_builder.rows(val.decode()?),
             "cols" => settings_builder = settings_builder.cols(val.decode()?),
-            // "p1_starting" => {
-            //     let position: Position = ints_to_position(val.decode()?);
-            //     settings_builder = settings_builder.p1_starting(position);
-            // }
-            // "p2_starting" => {
-            //     let position: Position = ints_to_position(val.decode()?);
-            //     settings_builder = settings_builder.p2_starting(position);
-            // }
+            "p1_starting" => {
+                let position: Position = ints_to_position(val.decode()?);
+                settings_builder = settings_builder.p1_starting(position);
+            }
+            "p2_starting" => {
+                let position: Position = ints_to_position(val.decode()?);
+                settings_builder = settings_builder.p2_starting(position);
+            }
              "starting_removed" => {
                  let removed = val.decode::<Vec<(u8, u8)>>()?.iter().map(|&pos| ints_to_position(pos)).collect();
                  settings_builder = settings_builder.starting_removed(removed);

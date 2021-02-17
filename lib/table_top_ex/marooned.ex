@@ -38,13 +38,19 @@ defmodule TableTopEx.Marooned do
   Creates a new instance of marooned from some given settings (or returns an error)
 
       iex> {:ok, game} = Marooned.new_from_settings(%Marooned.Settings{
-      ...>   dimensions: %{ rows: 20, cols: 21 },
-      ...>   starting_removed: [{0, 0}, {1, 1}]
+      ...>   dimensions: %{rows: 20, cols: 21},
+      ...>   starting_removed: [{0, 0}, {1, 1}],
+      ...>   p1_starting: {1, 2},
+      ...>   p2_starting: {3, 4},
       ...> })
       iex> Marooned.dimensions(game)
       %Marooned.Settings.Dimensions{rows: 20, cols: 21}
       iex> Marooned.removed(game)
       [{0, 0}, {1, 1}]
+      iex> Marooned.player_position(game, :P1)
+      {1, 2}
+      iex> Marooned.player_position(game, :P2)
+      {3, 4}
 
   # Errors
 
@@ -65,17 +71,50 @@ defmodule TableTopEx.Marooned do
       ...>   starting_removed: [{250, 250}]
       ...> })
       {:error, :cant_remove_position_not_on_board}
+
+  You can't remove the same position a player is starting at
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   starting_removed: [{0, 0}],
+      ...>   p1_starting: {0, 0}
+      ...> })
+      {:error, :player_cant_start_on_removed_square}
+
+  Players can't start at the same positon
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   p1_starting: {0, 0},
+      ...>   p2_starting: {0, 0}
+      ...> })
+      {:error, :players_cant_start_at_same_position}
+
+  Players must start on the board
+
+      iex> Marooned.new_from_settings(%Marooned.Settings{
+      ...>   p1_starting: {50, 50},
+      ...> })
+      {:error, :players_must_start_on_board}
+
   """
   def new_from_settings(%Settings{} = settings) do
     dimensions =
       Map.from_struct(%Dimensions{})
       |> Map.merge(settings.dimensions || %{})
 
-    NifBridge.marooned_new_from_settings(%{
+    opts = %{
       rows: dimensions.rows,
       cols: dimensions.cols,
       starting_removed: settings.starting_removed
-    })
+    }
+
+    opts =
+      Enum.reduce(~w(p1_starting p2_starting)a, opts, fn key, opts ->
+        if val = Map.get(settings, key),
+          do: Map.put(opts, key, val),
+          else: opts
+      end)
+
+    NifBridge.marooned_new_from_settings(opts)
     |> case do
       {:ok, ref} -> {:ok, %__MODULE__{_ref: ref}}
       {:error, err} -> {:error, err}
