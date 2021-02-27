@@ -7,7 +7,7 @@ defmodule TableTopEx.TicTacToeTest do
   test "you can have a draw" do
     game = TicTacToe.new()
 
-    moves = [
+    actions = [
       {:P1, {0, 0}},
       {:P2, {1, 0}},
       {:P1, {2, 0}},
@@ -20,13 +20,13 @@ defmodule TableTopEx.TicTacToeTest do
     ]
 
     game =
-      Enum.reduce(moves, game, fn {player, position}, game ->
+      Enum.reduce(actions, game, fn {player, position}, game ->
         {:ok, game} = TicTacToe.apply_action(game, player, position)
         game
       end)
 
     assert :draw == TicTacToe.status(game)
-    assert moves == TicTacToe.history(game)
+    assert actions == TicTacToe.history(game)
   end
 
   for win <- [
