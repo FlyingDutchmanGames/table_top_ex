@@ -7,7 +7,7 @@ defmodule TableTopEx.TicTacToe do
   @opaque t :: %__MODULE__{}
   @type player :: :P1 | :P2
   @type position :: {0..2, 0..2}
-  @type move :: {player(), position()}
+  @type action :: {player(), position()}
 
   defguardp on_board?(x) when x in [0, 1, 2]
 
@@ -75,7 +75,7 @@ defmodule TableTopEx.TicTacToe do
   end
 
   @doc ~S"""
-  Returns a list of the moves that have been played in this game, in order.
+  Returns a list of the actions that have been played in this game, in order.
 
       iex> game = TicTacToe.new()
       iex> TicTacToe.history(game)
@@ -85,7 +85,7 @@ defmodule TableTopEx.TicTacToe do
       iex> TicTacToe.history(game)
       [{:P1, {0, 0}}, {:P2, {0, 1}}]
   """
-  @spec history(t()) :: [move()]
+  @spec history(t()) :: [action()]
   def history(%__MODULE__{_ref: ref}) do
     {:ok, history} = NifBridge.tic_tac_toe_history(ref)
     history
@@ -182,7 +182,7 @@ defmodule TableTopEx.TicTacToe do
       iex> TicTacToe.apply_action(game, :P1, {100, 100})
       {:error, :position_outside_of_board}
 
-  Other than the above, you can make a move and have it advance the game
+  Other than the above, you can apply an action and have it advance the game
 
       iex> game = TicTacToe.new()
       iex> {:ok, new_game} = TicTacToe.apply_action(game, :P1, {0, 0})
