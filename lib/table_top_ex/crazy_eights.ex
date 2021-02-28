@@ -2,6 +2,7 @@ defmodule TableTopEx.CrazyEights do
   alias TableTopEx.NifBridge
 
   @opaque t :: %__MODULE__{}
+  @type player :: :P0 | :P1 | :P2 | :P3 | :P4 | :P5 | :P6 | :P7
 
   @enforce_keys [:_ref]
   defstruct [:_ref]
@@ -12,23 +13,34 @@ defmodule TableTopEx.CrazyEights do
 
   ## Examples
 
-      iex> %CrazyEights{} = CrazyEights.new(%{
-      ...>   number_of_players: 2,
-      ...>   seed: :crypto.strong_rand_bytes(32)
-      ...> })
+      iex> %CrazyEights{} = CrazyEights.new(%{number_of_players: 2})
 
   These only compare equal when the underlying data is the same ref
 
-      iex> settings = %{number_of_players: 2, seed: :crypto.strong_rand_bytes(32)}
-      iex> game = CrazyEights.new(settings)
+      iex> game = CrazyEights.new(%{number_of_players: 2})
       iex> game == game
       true
-      iex> game == CrazyEights.new(settings)
+      iex> game == CrazyEights.new(%{number_of_players: 2})
       false
   """
-  def new(%{number_of_players: number_of_players, seed: seed})
-      when is_binary(seed) and byte_size(seed) == 32 and number_of_players in 2..8 do
-    {:ok, ref} = NifBridge.crazy_eights_new(seed, number_of_players)
+  def new(settings) do
+    settings = Map.put_new(settings, :seed, :crypto.strong_rand_bytes(32))
+    {:ok, ref} = NifBridge.crazy_eights_new(settings.seed, settings.number_of_players)
     %__MODULE__{_ref: ref}
+  end
+
+  @spec whose_turn(t()) :: player()
+  @doc ~S"""
+  Returns the current player's turn
+
+  ## Examples
+
+      iex> game = CrazyEights.new(%{number_of_players: 2})
+      iex> CrazyEights.whose_turn(game)
+      :P0
+  """
+  def whose_turn(%__MODULE__{_ref: ref}) do
+    {:ok, player} = NifBridge.crazy_eights_whose_turn(ref)
+    player
   end
 end

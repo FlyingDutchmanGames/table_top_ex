@@ -29,6 +29,7 @@ defmodule TableTopEx.NifBridge do
 
   # Crazy Eights
   def crazy_eights_new(_seed, _number_of_players), do: err()
+  def crazy_eights_whose_turn(_game), do: err()
 
   defp err do
     :erlang.nif_error(:nif_not_loaded)

@@ -44,6 +44,7 @@ mod atoms {
         atom hearts;
 
         // players
+        atom P0;
         atom P1;
         atom P2;
         atom P3;
@@ -51,7 +52,6 @@ mod atoms {
         atom P5;
         atom P6;
         atom P7;
-        atom P8;
 
         // TicTacToe
         atom in_progress;
@@ -99,7 +99,8 @@ rustler::rustler_export_nifs! {
         ("marooned_dimensions", 1, marooned::dimensions),
         ("marooned_settings", 1, marooned::settings),
         // Crazy Eights
-        ("crazy_eights_new", 2, crazy_eights::new)
+        ("crazy_eights_new", 2, crazy_eights::new),
+        ("crazy_eights_whose_turn", 1, crazy_eights::whose_turn)
     ],
     Some(load)
 }
