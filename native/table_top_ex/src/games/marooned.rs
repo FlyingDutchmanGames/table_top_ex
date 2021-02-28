@@ -36,10 +36,14 @@ pub fn new_from_settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<
                 let position: Position = ints_to_position(val.decode()?);
                 settings_builder = settings_builder.p2_starting(position);
             }
-             "starting_removed" => {
-                 let removed = val.decode::<Vec<(u8, u8)>>()?.iter().map(|&pos| ints_to_position(pos)).collect();
-                 settings_builder = settings_builder.starting_removed(removed);
-             }
+            "starting_removed" => {
+                let removed = val
+                    .decode::<Vec<(u8, u8)>>()?
+                    .iter()
+                    .map(|&pos| ints_to_position(pos))
+                    .collect();
+                settings_builder = settings_builder.starting_removed(removed);
+            }
             _ => {}
         }
     }

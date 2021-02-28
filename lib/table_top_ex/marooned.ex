@@ -18,7 +18,7 @@ defmodule TableTopEx.Marooned do
 
   ## Examples
 
-  iex> %Marooned{} = Marooned.new()
+      iex> %Marooned{} = Marooned.new()
 
   These only compare equal when the underlying data is the same ref
 

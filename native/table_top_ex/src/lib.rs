@@ -7,13 +7,15 @@ extern crate rustler;
 use rustler::{Env, Term};
 
 mod games;
-use crate::games::{marooned, tic_tac_toe};
+use crate::games::{marooned, tic_tac_toe, crazy_eights};
 
+use lib_table_top::games::crazy_eights::GameState as CrazyEightsGameState;
 use lib_table_top::games::marooned::GameState as MaroonedGameState;
 use lib_table_top::games::tic_tac_toe::GameState as TicTacToeGameState;
 
 struct MaroonedResource(MaroonedGameState);
 struct TicTacToeResource(TicTacToeGameState);
+struct CrazyEightsResource(CrazyEightsGameState);
 
 mod atoms {
     rustler_atoms! {
@@ -31,6 +33,17 @@ mod atoms {
         atom win;
         atom lose;
         atom other_player_turn;
+
+        // deck
+        atom red;
+        atom black;
+
+        atom spades;
+        atom clubs;
+        atom diamonds;
+        atom hearts;
+
+        // players
         atom P1;
         atom P2;
         atom P3;
@@ -84,7 +97,9 @@ rustler::rustler_export_nifs! {
         ("marooned_valid_actions", 1, marooned::valid_actions),
         ("marooned_is_position_allowed_to_be_removed", 3, marooned::is_position_allowed_to_be_removed),
         ("marooned_dimensions", 1, marooned::dimensions),
-        ("marooned_settings", 1, marooned::settings)
+        ("marooned_settings", 1, marooned::settings),
+        // Crazy Eights
+        ("crazy_eights_new", 2, crazy_eights::new)
     ],
     Some(load)
 }
@@ -92,5 +107,6 @@ rustler::rustler_export_nifs! {
 fn load(env: Env, _info: Term) -> bool {
     resource_struct_init!(MaroonedResource, env);
     resource_struct_init!(TicTacToeResource, env);
+    resource_struct_init!(CrazyEightsResource, env);
     true
 }
