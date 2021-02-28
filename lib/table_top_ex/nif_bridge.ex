@@ -27,6 +27,9 @@ defmodule TableTopEx.NifBridge do
   def marooned_dimensions(_game), do: err()
   def marooned_settings(_game), do: err()
 
+  # Crazy Eights
+  def crazy_eights_new(_seed, _number_of_players), do: err()
+
   defp err do
     :erlang.nif_error(:nif_not_loaded)
   end
