@@ -60,4 +60,16 @@ defmodule TableTopEx.CrazyEights do
     {seed, number_of_players} = NifBridge.crazy_eights_settings(ref)
     %Settings{seed: seed, number_of_players: number_of_players}
   end
+
+  @spec status(t()) :: :in_progress | {:win, player()}
+  @doc ~S"""
+  Returns the status of the game
+
+      iex> game = CrazyEights.new(%{number_of_players: 2})
+      iex> CrazyEights.status(game)
+      :in_progress
+  """
+  def status(%__MODULE__{_ref: ref} = _game) do
+    NifBridge.crazy_eights_status(ref)
+  end
 end

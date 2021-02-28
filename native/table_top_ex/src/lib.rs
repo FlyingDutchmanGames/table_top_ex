@@ -103,6 +103,7 @@ rustler::rustler_export_nifs! {
         ("crazy_eights_new", 2, crazy_eights::new),
         ("crazy_eights_whose_turn", 1, crazy_eights::whose_turn),
         ("crazy_eights_settings", 1, crazy_eights::settings),
+        ("crazy_eights_status", 1, crazy_eights::status),
     ],
     Some(load)
 }

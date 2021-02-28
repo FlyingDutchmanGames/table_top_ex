@@ -6,7 +6,7 @@ use crate::{atoms, CrazyEightsResource};
 use crate::common::Bin;
 use lib_table_top::common::rand::RngSeed;
 use lib_table_top::games::crazy_eights::{
-    GameState, Settings, NumberOfPlayers, Player, Player::*
+    GameState, Settings, NumberOfPlayers, Player, Player::*, Status::*
 };
 use rustler::resource::ResourceArc;
 use rustler::{Atom, Binary, Encoder, Env, Error, NifResult, Term};
@@ -29,6 +29,16 @@ pub fn settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     let settings = game.0.settings();
     Ok(settings_to_tuple(settings).encode(env))
 }
+
+pub fn status<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<CrazyEightsResource> = args[0].decode()?;
+
+    match game.0.status() {
+        InProgress => Ok(atoms::in_progress().encode(env)),
+        Win { player } => Ok((atoms::win(), player_to_atom(player)).encode(env)),
+    }
+}
+
 
 fn binary_to_seed<'a>(binary: Binary<'a>) -> Result<RngSeed, Error> {
     binary
