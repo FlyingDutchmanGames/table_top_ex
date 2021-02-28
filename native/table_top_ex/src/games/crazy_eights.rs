@@ -44,7 +44,6 @@ fn int_to_number_of_players(int: u8) -> Result<NumberOfPlayers, Error> {
 
 fn player_to_atom(player: Player) -> rustler::Atom {
     match player {
-        P0 => atoms::P0(),
         P1 => atoms::P1(),
         P2 => atoms::P2(),
         P3 => atoms::P3(),
@@ -52,5 +51,6 @@ fn player_to_atom(player: Player) -> rustler::Atom {
         P5 => atoms::P5(),
         P6 => atoms::P6(),
         P7 => atoms::P7(),
+        P8 => atoms::P8(),
     }
 }

@@ -2,7 +2,7 @@ defmodule TableTopEx.CrazyEights do
   alias TableTopEx.NifBridge
 
   @opaque t :: %__MODULE__{}
-  @type player :: :P0 | :P1 | :P2 | :P3 | :P4 | :P5 | :P6 | :P7
+  @type player :: :P1 | :P2 | :P3 | :P4 | :P5 | :P6 | :P7 | :P8
 
   @enforce_keys [:_ref]
   defstruct [:_ref]
@@ -37,7 +37,7 @@ defmodule TableTopEx.CrazyEights do
 
       iex> game = CrazyEights.new(%{number_of_players: 2})
       iex> CrazyEights.whose_turn(game)
-      :P0
+      :P1
   """
   def whose_turn(%__MODULE__{_ref: ref}) do
     {:ok, player} = NifBridge.crazy_eights_whose_turn(ref)

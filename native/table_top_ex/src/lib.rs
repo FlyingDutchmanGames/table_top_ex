@@ -44,7 +44,6 @@ mod atoms {
         atom hearts;
 
         // players
-        atom P0;
         atom P1;
         atom P2;
         atom P3;
@@ -52,6 +51,7 @@ mod atoms {
         atom P5;
         atom P6;
         atom P7;
+        atom P8;
 
         // TicTacToe
         atom in_progress;
