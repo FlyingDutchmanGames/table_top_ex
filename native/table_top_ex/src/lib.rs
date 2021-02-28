@@ -7,6 +7,7 @@ extern crate rustler;
 use rustler::{Env, Term};
 
 mod games;
+mod common;
 use crate::games::{marooned, tic_tac_toe, crazy_eights};
 
 use lib_table_top::games::crazy_eights::GameState as CrazyEightsGameState;
@@ -100,7 +101,8 @@ rustler::rustler_export_nifs! {
         ("marooned_settings", 1, marooned::settings),
         // Crazy Eights
         ("crazy_eights_new", 2, crazy_eights::new),
-        ("crazy_eights_whose_turn", 1, crazy_eights::whose_turn)
+        ("crazy_eights_whose_turn", 1, crazy_eights::whose_turn),
+        ("crazy_eights_settings", 1, crazy_eights::settings),
     ],
     Some(load)
 }

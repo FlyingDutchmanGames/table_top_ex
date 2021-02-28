@@ -3,8 +3,11 @@
 use std::sync::Arc;
 use std::convert::TryInto;
 use crate::{atoms, CrazyEightsResource};
+use crate::common::Bin;
 use lib_table_top::common::rand::RngSeed;
-use lib_table_top::games::crazy_eights::{GameState, Settings, NumberOfPlayers, Player, Player::*};
+use lib_table_top::games::crazy_eights::{
+    GameState, Settings, NumberOfPlayers, Player, Player::*
+};
 use rustler::resource::ResourceArc;
 use rustler::{Atom, Binary, Encoder, Env, Error, NifResult, Term};
 
@@ -21,12 +24,22 @@ pub fn whose_turn<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), player_to_atom(game.0.whose_turn())).encode(env))
 }
 
+pub fn settings<'a>(env: Env<'a>, args: &[Term<'a>]) -> NifResult<Term<'a>> {
+    let game: ResourceArc<CrazyEightsResource> = args[0].decode()?;
+    let settings = game.0.settings();
+    Ok(settings_to_tuple(settings).encode(env))
+}
+
 fn binary_to_seed<'a>(binary: Binary<'a>) -> Result<RngSeed, Error> {
     binary
         .as_slice()
         .try_into()
         .map(|seed| RngSeed(seed))
         .map_err(|_| Error::RaiseAtom("seeds_must_be_exactly_32_bytes"))
+}
+
+fn settings_to_tuple(settings: &Settings) -> (Bin<[u8; 32]>, u8) {
+    (Bin(settings.seed.0), number_of_players_to_int(settings.number_of_players))
 }
 
 fn int_to_number_of_players(int: u8) -> Result<NumberOfPlayers, Error> {
@@ -39,6 +52,18 @@ fn int_to_number_of_players(int: u8) -> Result<NumberOfPlayers, Error> {
         7 => Ok(NumberOfPlayers::Seven),
         8 => Ok(NumberOfPlayers::Eight),
         _ => Err(Error::RaiseAtom("invalid_number_of_players")),
+    }
+}
+
+fn number_of_players_to_int(number_of_players: NumberOfPlayers) -> u8 {
+    match number_of_players {
+        NumberOfPlayers::Two => 2,
+        NumberOfPlayers::Three => 3,
+        NumberOfPlayers::Four => 4,
+        NumberOfPlayers::Five => 5,
+        NumberOfPlayers::Six => 6,
+        NumberOfPlayers::Seven => 7,
+        NumberOfPlayers::Eight => 8,
     }
 }
 

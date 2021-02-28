@@ -1,5 +1,6 @@
 defmodule TableTopEx.CrazyEights do
   alias TableTopEx.NifBridge
+  alias __MODULE__.Settings
 
   @opaque t :: %__MODULE__{}
   @type player :: :P1 | :P2 | :P3 | :P4 | :P5 | :P6 | :P7 | :P8
@@ -42,5 +43,21 @@ defmodule TableTopEx.CrazyEights do
   def whose_turn(%__MODULE__{_ref: ref}) do
     {:ok, player} = NifBridge.crazy_eights_whose_turn(ref)
     player
+  end
+
+  @spec settings(t()) :: Settings.t()
+  @doc ~S"""
+  Returns the settings for a game
+
+  ## Examples
+
+      iex> game = CrazyEights.new(%{number_of_players: 2})
+      iex> %CrazyEights.Settings{seed: <<_::256>>} = settings = CrazyEights.settings(game)
+      iex> settings.number_of_players
+      2
+  """
+  def settings(%__MODULE__{_ref: ref}) do
+    {seed, number_of_players} = NifBridge.crazy_eights_settings(ref)
+    %Settings{seed: seed, number_of_players: number_of_players}
   end
 end

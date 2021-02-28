@@ -1,4 +1,4 @@
 defmodule TableTopEx do
   @type role :: atom()
-  @type seed :: <<_::32>>
+  @type seed :: <<_::256>>
 end
